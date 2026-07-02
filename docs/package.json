@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/sync-external-docs.mjs && node scripts/fetch-releases.mjs && next dev --turbopack",
-    "sync": "node scripts/sync-external-docs.mjs",
+    "dev": "node scripts/fetch-releases.mjs && next dev --turbopack",
     "fetch-releases": "node scripts/fetch-releases.mjs",
-    "build": "node scripts/sync-external-docs.mjs && node scripts/fetch-releases.mjs && next build",
-    "start": "next start"
+    "build": "node scripts/fetch-releases.mjs && next build",
+    "start": "npx serve out"
   },
   "dependencies": {
     "@orama/orama": "^3.1.18",

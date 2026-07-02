@@ -3,6 +3,7 @@ import { Lora } from "next/font/google";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ChonkieSearchDialog } from "@/components/search-dialog";
+import { DOCS_SITE_URL } from "@/lib/constants";
 import "./global.css";
 
 const lora = Lora({
@@ -11,7 +12,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://docs.chonkie.ai"),
+  metadataBase: new URL(DOCS_SITE_URL),
   title: "Chonkie Documentation",
   description:
     "The lightweight ingestion library for fast, efficient and robust RAG pipelines",

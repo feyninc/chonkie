@@ -1,6 +1,5 @@
 import { createFromSource } from "fumadocs-core/search/server";
 import { findPath } from "fumadocs-core/page-tree";
-import { getProductForPageUrl } from "@/lib/doc-collections";
 import { source } from "@/lib/source";
 
 type DocsPage = ReturnType<typeof source.getPages>[number];
@@ -52,11 +51,8 @@ async function buildPageSearchIndex(page: DocsPage) {
     );
   }
 
-  const product = getProductForPageUrl(page.url);
   const treeBreadcrumbs = resolveTreeBreadcrumbs(page);
-  const breadcrumbs = product
-    ? [product.label, ...treeBreadcrumbs.filter((crumb) => crumb !== product.label)]
-    : treeBreadcrumbs;
+  const breadcrumbs = ["chonkie", ...treeBreadcrumbs.filter((crumb) => crumb !== "chonkie")];
 
   return {
     id: page.url,

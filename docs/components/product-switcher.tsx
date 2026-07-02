@@ -62,7 +62,14 @@ export function ProductSwitcher() {
   function handleSelect(product: DocsProduct) {
     setOpen(false);
     if (product.id === current.id) return;
-    router.push(switchProductHref(pathname, product.id));
+
+    const href = switchProductHref(pathname, product.id);
+    if (product.externalUrl) {
+      window.location.assign(href);
+      return;
+    }
+
+    router.push(href);
   }
 
   return (

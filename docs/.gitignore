@@ -146,6 +146,4 @@ vite.config.ts.timestamp-*
 # Fumadocs generated source
 .source
 .playwright-mcp
-chonkiejs/content/
-.vercel
 .env*

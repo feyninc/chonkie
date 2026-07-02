@@ -1,12 +1,16 @@
+import { CHONKIEJS_DOCS_URL } from "./constants";
+
 export type DocsProductId = "chonkie" | "chonkiejs";
 
 export interface DocsProduct {
   id: DocsProductId;
   label: string;
   description: string;
-  basePath: string;
+  basePath?: string;
   defaultPage: string;
   badge: string | null;
+  /** When set, this product is hosted on a separate docs site. */
+  externalUrl?: string;
 }
 
 export const docsProducts: DocsProduct[] = [
@@ -22,9 +26,9 @@ export const docsProducts: DocsProduct[] = [
     id: "chonkiejs",
     label: "chonkiejs",
     description: "@chonkiejs/core on npm",
-    basePath: "/chonkiejs",
-    defaultPage: "/chonkiejs/getting-started/quick-start",
-    badge: null,
+    defaultPage: CHONKIEJS_DOCS_URL,
+    badge: "JS",
+    externalUrl: CHONKIEJS_DOCS_URL,
   },
 ];
 

@@ -3,11 +3,9 @@
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import type * as PageTree from "fumadocs-core/page-tree";
-import { usePathname } from "next/navigation";
 import { useMemo, type ReactNode } from "react";
 import { ProductSwitcher } from "@/components/product-switcher";
 import { filterPageTreeForProduct } from "@/lib/filter-tree";
-import { getProductFromPath } from "@/lib/product-routes";
 
 type DocsLayoutClientProps = BaseLayoutProps & {
   tree: PageTree.Root;
@@ -19,13 +17,7 @@ export function DocsLayoutClient({
   children,
   ...baseOptions
 }: DocsLayoutClientProps) {
-  const pathname = usePathname() ?? "/docs";
-  const productId = getProductFromPath(pathname).id;
-
-  const filteredTree = useMemo(
-    () => filterPageTreeForProduct(tree, productId),
-    [tree, productId],
-  );
+  const filteredTree = useMemo(() => filterPageTreeForProduct(tree), [tree]);
 
   return (
     <DocsLayout

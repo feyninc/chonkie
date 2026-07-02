@@ -5,7 +5,6 @@ const OUT_DIR = path.resolve('public', 'data');
 
 const REPOS = [
   { repo: 'chonkie-inc/chonkie', file: 'releases.json' },
-  { repo: 'chonkie-inc/chonkiejs', file: 'releases-js.json' },
 ];
 
 async function fetchReleases(repo, outFile) {
