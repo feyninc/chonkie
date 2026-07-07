@@ -101,6 +101,10 @@ def test_semantic_chunker_oversized_single_sentence(embedding_model: BaseEmbeddi
     assert all([chunk.token_count <= chunk_size for chunk in chunks]), (
         "Every chunk must respect chunk_size even when a single sentence is oversized"
     )
+    # Guard against token_count being underreported: re-tokenize the actual text.
+    assert all([chunker.tokenizer.count_tokens(chunk.text) <= chunk_size for chunk in chunks]), (
+        "The tokenized chunk text must also stay within chunk_size"
+    )
 
 
 def test_semantic_chunker_oversized_sentence_below_similarity_window(
@@ -122,6 +126,9 @@ def test_semantic_chunker_oversized_sentence_below_similarity_window(
     assert len(chunks) > 1
     assert all([chunk.token_count <= chunk_size for chunk in chunks]), (
         "The few-sentences path must also split oversized sentences"
+    )
+    assert all([chunker.tokenizer.count_tokens(chunk.text) <= chunk_size for chunk in chunks]), (
+        "The tokenized chunk text must also stay within chunk_size"
     )
 
 
