@@ -413,16 +413,23 @@ class SemanticChunker(BaseChunker):
         token_groups = [
             tokens[i : i + self.chunk_size] for i in range(0, len(tokens), self.chunk_size)
         ]
-        texts = self.tokenizer.decode_batch(token_groups)
-        return [
-            Sentence(
-                text=text,
-                start_index=sentence.start_index,
-                end_index=sentence.start_index + len(text),
-                token_count=len(group),
+
+        pieces = []
+        current_start = sentence.start_index
+        for group in token_groups:
+            # Decode one group at a time: decode() is part of the tokenizer
+            # protocol, decode_batch() is not guaranteed for custom tokenizers.
+            text = self.tokenizer.decode(group)
+            pieces.append(
+                Sentence(
+                    text=text,
+                    start_index=current_start,
+                    end_index=current_start + len(text),
+                    token_count=len(group),
+                )
             )
-            for text, group in zip(texts, token_groups)
-        ]
+            current_start += len(text)
+        return pieces
 
     def _split_groups(self, groups: list[list[Sentence]]) -> list[list[Sentence]]:
         """Split groups that exceed chunk_size into smaller groups.
