@@ -79,7 +79,7 @@ class Chunk:
                 return preview
             else:
                 return str(self.embedding)
-        except:
+        except Exception:
             return "<embedding>"
 
     def __repr__(self) -> str:
