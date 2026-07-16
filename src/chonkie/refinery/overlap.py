@@ -267,6 +267,13 @@ class OverlapRefinery(BaseRefinery):
             effective_context_size: The effective context size to use.
 
         """
+        # A float context_size can round down to zero tokens for a small chunk,
+        # which means no overlap. Return early: the recursive path would otherwise
+        # split with a zero step (range(..., 0)) and the token path would treat
+        # tokens[-0:] as the whole chunk.
+        if effective_context_size <= 0:
+            return ""
+
         # Route to the appropriate method
         if self.mode == "token":
             return self._prefix_overlap_token(chunk, effective_context_size)
@@ -364,6 +371,12 @@ class OverlapRefinery(BaseRefinery):
             effective_context_size: The effective context size to use.
 
         """
+        # A float context_size can round down to zero tokens for a small chunk,
+        # which means no overlap. Return early: the recursive path would otherwise
+        # split with a zero step (range(..., 0)).
+        if effective_context_size <= 0:
+            return ""
+
         # Route to the appropriate method
         if self.mode == "token":
             return self._suffix_overlap_token(chunk, effective_context_size)
