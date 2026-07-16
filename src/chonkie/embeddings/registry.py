@@ -37,8 +37,6 @@ class EmbeddingsRegistry:
         Args:
             name: Unique identifier for this implementation
             embedding_cls: The embeddings class to register
-            pattern: Optional regex pattern string or compiled pattern
-            supported_types: Optional list of types that the embeddings class supports
 
         """
         if not issubclass(embedding_cls, BaseEmbeddings):
