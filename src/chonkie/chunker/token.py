@@ -48,14 +48,20 @@ class TokenChunker(BaseChunker):
         super().__init__(tokenizer)
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
-        if isinstance(chunk_overlap, int) and chunk_overlap >= chunk_size:
-            raise ValueError("chunk_overlap must be less than chunk_size")
 
         # Assign the values if they make sense
         self.chunk_size = chunk_size
         self.chunk_overlap = (
             chunk_overlap if isinstance(chunk_overlap, int) else int(chunk_overlap * chunk_size)
         )
+        # Validate the resolved overlap so a float chunk_overlap is held to the
+        # same invariant as an int one. A float that resolves to >= chunk_size
+        # would make the chunk stride (chunk_size - chunk_overlap) zero or
+        # negative, which crashes with range(..., 0) or silently drops all text.
+        if self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
+        if self.chunk_overlap >= chunk_size:
+            raise ValueError("chunk_overlap must be less than chunk_size")
 
         self._use_multiprocessing = False
 
