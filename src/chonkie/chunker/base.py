@@ -30,7 +30,8 @@ def split_text_by_delimiters(
         text: Input text to be split.
         delimiters: Delimiter(s) to split on. Can be a single string or list of strings.
         include_delim: Whether to include delimiters in the current chunk ("prev"),
-            the next chunk ("next"), or to drop them entirely (None). Defaults to "prev".
+            the next chunk ("next"), or to drop them entirely (None).
+            Defaults to "prev".
         min_chars: Minimum number of characters per split.
 
     Returns:
