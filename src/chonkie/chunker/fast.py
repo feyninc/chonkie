@@ -1,5 +1,6 @@
 """Fast chunker powered by chonkie-core."""
 
+from bisect import bisect_left
 from typing import Any, Dict, List, Optional, Sequence
 
 import chonkie_core
@@ -96,22 +97,37 @@ class FastChunker(BaseChunker):
         # Get chunk offsets from chonkie-core (these are byte offsets)
         offsets = chonkie_core.chunk_offsets(text_bytes, **kwargs)
 
-        # Convert to Chunk objects by slicing bytes and decoding
-        # Track character position to convert byte offsets to char offsets
+        # chonkie-core returns byte offsets, and a hard size cut can land inside a
+        # multi-byte UTF-8 character; slicing the raw bytes there raises
+        # UnicodeDecodeError. Pure-ASCII text has byte offsets == char offsets, so
+        # the common case needs no remapping.
+        if len(text_bytes) == len(text):
+            return [
+                Chunk(text=text[start:end], start_index=start, end_index=end, token_count=0)
+                for start, end in offsets
+                if end > start
+            ]
+
+        # Otherwise snap each byte offset up to a character boundary so a chunk
+        # never splits a multi-byte character, then slice the decoded text.
+        char_starts = [0]
+        for char in text:
+            char_starts.append(char_starts[-1] + len(char.encode("utf-8")))
+
         chunks = []
-        char_pos = 0
         for start, end in offsets:
-            chunk_text = text_bytes[start:end].decode("utf-8")
-            chunk_char_len = len(chunk_text)
+            char_start = bisect_left(char_starts, start)
+            char_end = bisect_left(char_starts, end)
+            if char_end <= char_start:
+                continue
             chunks.append(
                 Chunk(
-                    text=chunk_text,
-                    start_index=char_pos,
-                    end_index=char_pos + chunk_char_len,
+                    text=text[char_start:char_end],
+                    start_index=char_start,
+                    end_index=char_end,
                     token_count=0,
                 )
             )
-            char_pos += chunk_char_len
         return chunks
 
     def chunk_batch(self, texts: Sequence[str], show_progress: bool = True) -> List[List[Chunk]]:
