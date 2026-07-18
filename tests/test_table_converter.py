@@ -71,6 +71,9 @@ class TestMarkdownTableToJson:
         # Empty header cells must not leak pandas EmptyDataError.
         assert markdown_table_to_json("|\n|-|") == []
         assert markdown_table_to_json("||\n|-|") == []
+        # strip("|") leaves inner pipes for 3+ blank columns; still empty JSON.
+        assert markdown_table_to_json("| | | |\n|---|---|---|") == []
+        assert markdown_table_to_json("|  |  |  |  |\n|---|---|---|---|") == []
 
 
 class TestHTMLTableToJson:
