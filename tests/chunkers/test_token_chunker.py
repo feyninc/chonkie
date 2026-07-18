@@ -348,3 +348,14 @@ def test_token_chunker_accepts_valid_fractional_overlap_and_chunks() -> None:
     # Every original character is covered by the first chunk's start through the last chunk's end.
     assert chunks[0].start_index == 0
     assert chunks[-1].end_index == len(text)
+
+
+def test_token_chunker_rejects_negative_overlap() -> None:
+    """Negative chunk_overlap values must be rejected before resolution."""
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-1)
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-0.1)
+    # Small negative floats truncate to 0 via int(); must still be rejected.
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-0.05)
