@@ -48,14 +48,18 @@ class TokenChunker(BaseChunker):
         super().__init__(tokenizer)
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
-        if isinstance(chunk_overlap, int) and chunk_overlap >= chunk_size:
-            raise ValueError("chunk_overlap must be less than chunk_size")
+        # Validate raw overlap before int() resolution; a small negative float
+        # like -0.05 truncates to 0 and would otherwise bypass the check below.
+        if chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
 
         # Assign the values if they make sense
         self.chunk_size = chunk_size
         self.chunk_overlap = (
             chunk_overlap if isinstance(chunk_overlap, int) else int(chunk_overlap * chunk_size)
         )
+        if self.chunk_overlap >= chunk_size:
+            raise ValueError("chunk_overlap must be less than chunk_size")
 
         self._use_multiprocessing = False
 

@@ -309,3 +309,53 @@ def test_token_chunker_return_type(tiktokenizer: Encoding, sample_text: str) -> 
     chunks = chunker.chunk(sample_text)
     assert all([type(chunk) is Chunk for chunk in chunks])
     assert all([len(tiktokenizer.encode(chunk.text)) <= 512 for chunk in chunks])
+
+
+def test_token_chunker_rejects_int_overlap_equal_to_chunk_size() -> None:
+    """An int chunk_overlap equal to chunk_size is invalid (existing behavior)."""
+    with pytest.raises(ValueError, match="chunk_overlap must be less than chunk_size"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=10)
+
+
+def test_token_chunker_rejects_float_overlap_resolving_to_chunk_size() -> None:
+    """A float chunk_overlap of 1.0 resolves to chunk_size and must be rejected.
+
+    Previously only the int path was validated, so this constructed a chunker with
+    a zero stride and chunk() raised 'range() arg 3 must not be zero'.
+    """
+    with pytest.raises(ValueError, match="chunk_overlap must be less than chunk_size"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=1.0)
+
+
+def test_token_chunker_rejects_float_overlap_exceeding_chunk_size() -> None:
+    """A float chunk_overlap > 1.0 resolves above chunk_size and must be rejected.
+
+    Previously this produced a negative stride and chunk() silently returned zero
+    chunks, dropping the entire input text.
+    """
+    with pytest.raises(ValueError, match="chunk_overlap must be less than chunk_size"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=1.5)
+
+
+def test_token_chunker_accepts_valid_fractional_overlap_and_chunks() -> None:
+    """A valid fractional float overlap resolves correctly and chunks non-empty text."""
+    chunker = TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=0.5)
+    assert chunker.chunk_overlap == 5
+    text = "x" * 40
+    chunks = chunker.chunk(text)
+    assert len(chunks) > 1
+    assert "".join(dict.fromkeys([c.text[0] for c in chunks])) == "x"
+    # Every original character is covered by the first chunk's start through the last chunk's end.
+    assert chunks[0].start_index == 0
+    assert chunks[-1].end_index == len(text)
+
+
+def test_token_chunker_rejects_negative_overlap() -> None:
+    """Negative chunk_overlap values must be rejected before resolution."""
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-1)
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-0.1)
+    # Small negative floats truncate to 0 via int(); must still be rejected.
+    with pytest.raises(ValueError, match="chunk_overlap must be non-negative"):
+        TokenChunker(tokenizer="character", chunk_size=10, chunk_overlap=-0.05)
