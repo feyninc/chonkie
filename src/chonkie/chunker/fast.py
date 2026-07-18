@@ -110,9 +110,8 @@ class FastChunker(BaseChunker):
 
         # Otherwise snap each byte offset up to a character boundary so a chunk
         # never splits a multi-byte character, then slice the decoded text.
-        char_starts = [0]
-        for char in text:
-            char_starts.append(char_starts[-1] + len(char.encode("utf-8")))
+        char_starts = [i for i, b in enumerate(text_bytes) if (b & 0xC0) != 0x80]
+        char_starts.append(len(text_bytes))
 
         chunks = []
         for start, end in offsets:
