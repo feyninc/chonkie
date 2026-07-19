@@ -144,24 +144,28 @@ class TableChunker(BaseChunker):
                     ),
                 ]
             else:
-                # Track character position for data rows (after header)
+                # Track character position. The first chunk's span includes the
+                # header (which physically sits at the start of the text), so it
+                # begins at index 0; subsequent chunks span only their data rows.
+                # This mirrors the token-based path below and keeps chunk spans
+                # contiguous over the whole table starting from index 0.
                 header_len = len(header)
-                current_char_index = header_len
+                current_char_index = 0
 
                 for i in range(0, len(data_rows), self.chunk_size):
                     chunk_rows = data_rows[i : i + self.chunk_size]
                     chunk_text = header + "".join(chunk_rows) + footer
-                    data_rows_len = len("".join(chunk_rows))
+                    span_len = len("".join(chunk_rows)) + (header_len if i == 0 else 0)
 
                     chunks.append(
                         Chunk(
                             text=chunk_text,
                             token_count=len(chunk_rows),
                             start_index=current_char_index,
-                            end_index=current_char_index + data_rows_len,
+                            end_index=current_char_index + span_len,
                         ),
                     )
-                    current_char_index += data_rows_len
+                    current_char_index += span_len
 
             return chunks
 
