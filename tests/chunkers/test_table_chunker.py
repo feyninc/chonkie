@@ -875,3 +875,21 @@ def test_table_chunker_row_tokenizer_indices():
         assert chunks[i].end_index == chunks[i + 1].start_index
     assert chunks[-1].end_index == len(table)
     assert "".join(table[c.start_index : c.end_index] for c in chunks) == table
+
+
+def test_table_chunker_row_tokenizer_html_indices_cover_full_input() -> None:
+    table = (
+        "  <table><thead><tr><th>A</th></tr></thead><tbody>"
+        "<tr><td>1</td></tr><tr><td>2</td></tr><tr><td>3</td></tr>"
+        "</tbody></table>\n"
+    )
+    chunker = TableChunker(tokenizer="row", chunk_size=1)
+
+    chunks = chunker.chunk(table)
+
+    assert len(chunks) == 3
+    assert chunks[0].start_index == 0
+    for current, following in zip(chunks, chunks[1:]):
+        assert current.end_index == following.start_index
+    assert chunks[-1].end_index == len(table)
+    assert "".join(table[chunk.start_index : chunk.end_index] for chunk in chunks) == table
