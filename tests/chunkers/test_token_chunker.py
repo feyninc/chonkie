@@ -275,6 +275,30 @@ def test_token_chunker_indices_complex_md(sample_complex_markdown_text: str) -> 
     verify_chunk_indices(chunks, sample_complex_markdown_text)
 
 
+@pytest.mark.parametrize(
+    "tokenizer_fixture", ["tiktokenizer", "tokenizer", "transformers_tokenizer"]
+)
+def test_token_chunker_preserves_unicode_source_offsets(
+    request: pytest.FixtureRequest, tokenizer_fixture: str
+) -> None:
+    """Test that token boundaries cannot split a multi-byte character."""
+    text = "a🩺 hello world"
+    tokenizer = request.getfixturevalue(tokenizer_fixture)
+    chunker = TokenChunker(tokenizer=tokenizer, chunk_size=2, chunk_overlap=0)
+
+    chunks = chunker.chunk(text)
+
+    assert [chunk.text for chunk in chunks] == ["a", "🩺", " hello world"]
+    assert [chunk.token_count for chunk in chunks] == [1, 3, 2]
+    assert all(chunk.end_index > chunk.start_index for chunk in chunks)
+    verify_chunk_indices(chunks, text)
+
+    for batch_chunks in chunker.chunk_batch([text, text]):
+        assert [chunk.text for chunk in batch_chunks] == ["a", "🩺", " hello world"]
+        assert all(chunk.end_index > chunk.start_index for chunk in batch_chunks)
+        verify_chunk_indices(batch_chunks, text)
+
+
 def test_token_chunker_token_counts(tiktokenizer: Encoding, sample_text: str) -> None:
     """Test that the TokenChunker correctly calculates token counts."""
     chunker = TokenChunker(tokenizer=tiktokenizer, chunk_size=512, chunk_overlap=128)

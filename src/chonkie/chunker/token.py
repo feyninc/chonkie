@@ -4,6 +4,7 @@ This module provides a TokenChunker class for splitting text into chunks of a sp
 
 """
 
+from bisect import bisect_right
 from typing import Generator, Sequence, Union
 
 from tqdm import trange
@@ -102,6 +103,70 @@ class TokenChunker(BaseChunker):
 
         return chunks
 
+    def _create_chunks_with_offsets(
+        self,
+        text: str,
+        tokens: Sequence[int],
+        offsets: Sequence[tuple[int, int]],
+    ) -> list[Chunk]:
+        """Create character-safe chunks from tokenizer offsets."""
+        safe_boundaries = [0]
+        for index in range(1, len(tokens)):
+            previous_start, previous_end = offsets[index - 1]
+            current_start, _ = offsets[index]
+            if previous_end > previous_start and previous_end == current_start:
+                safe_boundaries.append(index)
+        safe_boundaries.append(len(tokens))
+
+        chunks = []
+        start = 0
+        while start < len(tokens):
+            requested_end = min(start + self.chunk_size, len(tokens))
+            end = safe_boundaries[bisect_right(safe_boundaries, requested_end) - 1]
+            if end <= start:
+                end = safe_boundaries[bisect_right(safe_boundaries, start)]
+
+            start_index = offsets[start][0]
+            end_index = offsets[end - 1][1]
+            chunks.append(
+                Chunk(
+                    text=text[start_index:end_index],
+                    start_index=start_index,
+                    end_index=end_index,
+                    token_count=end - start,
+                )
+            )
+
+            if end == len(tokens):
+                break
+
+            requested_start = max(0, end - self.chunk_overlap)
+            next_start = safe_boundaries[bisect_right(safe_boundaries, requested_start) - 1]
+            if next_start <= start:
+                next_start = safe_boundaries[bisect_right(safe_boundaries, start)]
+            start = next_start
+
+        return chunks
+
+    def _chunk_tokens(self, text: str, tokens: Sequence[int]) -> list[Chunk]:
+        """Chunk tokens, using source offsets when the tokenizer provides them."""
+        encode_with_offsets = getattr(self.tokenizer, "encode_with_offsets", None)
+        if callable(encode_with_offsets):
+            try:
+                offset_tokens, offsets = encode_with_offsets(text)
+            except (NotImplementedError, ValueError):
+                # Some tokenizer backends do not expose offset mappings. Keep
+                # their existing decode-based behavior in that case.
+                pass
+            else:
+                if list(tokens) == offset_tokens and len(offsets) == len(tokens):
+                    return self._create_chunks_with_offsets(text, tokens, offsets)
+
+        token_groups = list(self._token_group_generator(tokens))
+        token_counts = [len(token_group) for token_group in token_groups]
+        chunk_texts = self.tokenizer.decode_batch(token_groups)
+        return self._create_chunks(chunk_texts, token_groups, token_counts)
+
     def _token_group_generator(self, tokens: Sequence[int]) -> Generator[list[int], None, None]:
         """Generate chunks from a list of tokens."""
         for start in range(0, len(tokens), self.chunk_size - self.chunk_overlap):
@@ -128,15 +193,7 @@ class TokenChunker(BaseChunker):
         # Encode full text
         text_tokens = self.tokenizer.encode(text)
 
-        # Calculate token groups and counts
-        token_groups = list(self._token_group_generator(text_tokens))
-        token_counts = [len(toks) for toks in token_groups]
-
-        # decode the token groups into the chunk texts
-        chunk_texts = self.tokenizer.decode_batch(token_groups)
-
-        # Create the chunks from the token groups and token counts
-        chunks = self._create_chunks(chunk_texts, token_groups, token_counts)
+        chunks = self._chunk_tokens(text, text_tokens)
 
         logger.info(f"Created {len(chunks)} chunks from {len(text_tokens)} tokens")
         return chunks
@@ -147,23 +204,12 @@ class TokenChunker(BaseChunker):
         tokens_list = self.tokenizer.encode_batch(texts)
         result: list = []
 
-        for tokens in tokens_list:
+        for text, tokens in zip(texts, tokens_list):
             if not tokens:
                 result.append([])
                 continue
 
-            # get the token groups
-            token_groups = list(self._token_group_generator(tokens))
-
-            # get the token counts
-            token_counts = [len(token_group) for token_group in token_groups]
-
-            # decode the token groups into the chunk texts
-            chunk_texts = self.tokenizer.decode_batch(token_groups)
-
-            # create the chunks from the token groups and token counts
-            chunks = self._create_chunks(chunk_texts, token_groups, token_counts)
-            result.append(chunks)
+            result.append(self._chunk_tokens(text, tokens))
 
         return result
 
