@@ -676,7 +676,7 @@ class TokenizersAutoTokenizer(AutoTokenizer):
     def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
         """Encode text and return character offsets for each token."""
         encoding = self.tokenizer.encode(text, add_special_tokens=False)
-        return encoding.ids, encoding.offsets
+        return list(encoding.ids), list(encoding.offsets)
 
 
 class TokieAutoTokenizer(AutoTokenizer):
@@ -694,7 +694,7 @@ class TokieAutoTokenizer(AutoTokenizer):
     def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
         """Encode text and return character offsets for each token."""
         encoding = self.tokenizer.encode_with_offsets(text, add_special_tokens=False)
-        return encoding.ids, _byte_offsets_to_character_offsets(text, encoding.offsets)
+        return list(encoding.ids), _byte_offsets_to_character_offsets(text, encoding.offsets)
 
     def decode(self, tokens: Sequence[int]) -> str:
         """Decode token IDs back to text."""

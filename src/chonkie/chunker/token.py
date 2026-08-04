@@ -148,20 +148,23 @@ class TokenChunker(BaseChunker):
 
         return chunks
 
-    def _chunk_tokens(self, text: str, tokens: Sequence[int]) -> list[Chunk]:
-        """Chunk tokens, using source offsets when the tokenizer provides them."""
+    def _chunk_with_offsets(self, text: str) -> tuple[list[Chunk], int] | None:
+        """Chunk text with source offsets when the tokenizer provides them."""
         encode_with_offsets = getattr(self.tokenizer, "encode_with_offsets", None)
         if callable(encode_with_offsets):
             try:
                 offset_tokens, offsets = encode_with_offsets(text)
             except (NotImplementedError, ValueError):
-                # Some tokenizer backends do not expose offset mappings. Keep
-                # their existing decode-based behavior in that case.
-                pass
+                return None
             else:
-                if list(tokens) == offset_tokens and len(offsets) == len(tokens):
-                    return self._create_chunks_with_offsets(text, tokens, offsets)
+                if offset_tokens and len(offsets) == len(offset_tokens):
+                    chunks = self._create_chunks_with_offsets(text, offset_tokens, offsets)
+                    return chunks, len(offset_tokens)
 
+        return None
+
+    def _chunk_tokens(self, tokens: Sequence[int]) -> list[Chunk]:
+        """Chunk token IDs using the decode-based fallback."""
         token_groups = list(self._token_group_generator(tokens))
         token_counts = [len(token_group) for token_group in token_groups]
         chunk_texts = self.tokenizer.decode_batch(token_groups)
@@ -190,28 +193,37 @@ class TokenChunker(BaseChunker):
 
         logger.debug(f"Chunking text of length {len(text)} with chunk_size={self.chunk_size}")
 
-        # Encode full text
-        text_tokens = self.tokenizer.encode(text)
+        offset_chunks = self._chunk_with_offsets(text)
+        if offset_chunks is not None:
+            chunks, token_count = offset_chunks
+        else:
+            text_tokens = self.tokenizer.encode(text)
+            chunks = self._chunk_tokens(text_tokens)
+            token_count = len(text_tokens)
 
-        chunks = self._chunk_tokens(text, text_tokens)
-
-        logger.info(f"Created {len(chunks)} chunks from {len(text_tokens)} tokens")
+        logger.info(f"Created {len(chunks)} chunks from {token_count} tokens")
         return chunks
 
     def _process_batch(self, texts: list[str]) -> list[list[Chunk]]:
         """Process a batch of texts."""
-        # encode the texts into tokens in a batch
-        tokens_list = self.tokenizer.encode_batch(texts)
-        result: list = []
+        result: list[list[Chunk] | None] = [None] * len(texts)
+        fallback_indices = []
+        fallback_texts = []
 
-        for text, tokens in zip(texts, tokens_list):
-            if not tokens:
-                result.append([])
-                continue
+        for index, text in enumerate(texts):
+            offset_chunks = self._chunk_with_offsets(text)
+            if offset_chunks is not None:
+                result[index] = offset_chunks[0]
+            else:
+                fallback_indices.append(index)
+                fallback_texts.append(text)
 
-            result.append(self._chunk_tokens(text, tokens))
+        if fallback_texts:
+            tokens_list = self.tokenizer.encode_batch(fallback_texts)
+            for index, tokens in zip(fallback_indices, tokens_list):
+                result[index] = self._chunk_tokens(tokens) if tokens else []
 
-        return result
+        return [chunks if chunks is not None else [] for chunks in result]
 
     def chunk_batch(  # ty: ignore[invalid-method-override]
         self,

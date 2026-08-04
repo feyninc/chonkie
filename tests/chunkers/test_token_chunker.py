@@ -8,6 +8,7 @@ import pytest
 import tiktoken
 from tiktoken import Encoding
 from tokenizers import Tokenizer
+from tokie import Tokenizer as TokieTokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
 from chonkie import Chunk, TokenChunker
@@ -35,6 +36,15 @@ def tokenizer() -> Tokenizer:
         return Tokenizer.from_pretrained("gpt2")
     except (OSError, ValueError) as e:
         pytest.skip(f"Could not load tokenizers tokenizer: {e}")
+
+
+@pytest.fixture
+def tokie_tokenizer() -> TokieTokenizer:
+    """Fixture that returns a GPT-2 tokenizer from the tokie library."""
+    try:
+        return TokieTokenizer.from_pretrained("openai-community/gpt2")
+    except (OSError, ValueError) as e:
+        pytest.skip(f"Could not load tokie tokenizer: {e}")
 
 
 @pytest.fixture
@@ -276,7 +286,7 @@ def test_token_chunker_indices_complex_md(sample_complex_markdown_text: str) -> 
 
 
 @pytest.mark.parametrize(
-    "tokenizer_fixture", ["tiktokenizer", "tokenizer", "transformers_tokenizer"]
+    "tokenizer_fixture", ["tiktokenizer", "tokenizer", "tokie_tokenizer", "transformers_tokenizer"]
 )
 def test_token_chunker_preserves_unicode_source_offsets(
     request: pytest.FixtureRequest, tokenizer_fixture: str
