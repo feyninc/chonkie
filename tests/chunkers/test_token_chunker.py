@@ -309,3 +309,23 @@ def test_token_chunker_return_type(tiktokenizer: Encoding, sample_text: str) -> 
     chunks = chunker.chunk(sample_text)
     assert all([type(chunk) is Chunk for chunk in chunks])
     assert all([len(tiktokenizer.encode(chunk.text)) <= 512 for chunk in chunks])
+
+
+@pytest.mark.parametrize("overlap", [1.0, 1.5, 2.0])
+def test_token_chunker_rejects_float_overlap_at_or_above_one(overlap: float) -> None:
+    """A float overlap resolving to >= chunk_size must raise, not drop text.
+
+    A float overlap is treated as a fraction of chunk_size, so 1.0 resolves to
+    chunk_size and 1.5 to more than chunk_size. Before validation covered the
+    float case, these silently produced zero chunks (or crashed with an opaque
+    range() error) because the chunk step became zero or negative.
+    """
+    with pytest.raises(ValueError):
+        TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=overlap)
+
+
+def test_token_chunker_accepts_valid_fractional_overlap() -> None:
+    """A valid fractional overlap still chunks the text."""
+    chunker = TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=0.5)
+    chunks = chunker.chunk("a " * 500)
+    assert len(chunks) > 0
