@@ -5,6 +5,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
 from chonkie.logger import get_logger
@@ -479,6 +480,38 @@ def _is_huggingface_offline() -> bool:
     )
 
 
+def _resolve_huggingface_tokenizer_file(identifier: str) -> Path:
+    """Resolve a tokenizer JSON file without making a network request."""
+    local_path = Path(identifier).expanduser()
+    if local_path.is_file():
+        return local_path
+
+    if local_path.is_dir():
+        local_tokenizer_file = local_path / "tokenizer.json"
+        if local_tokenizer_file.is_file():
+            return local_tokenizer_file
+
+    try:
+        from huggingface_hub import try_to_load_from_cache
+    except ImportError as e:
+        raise ImportError(
+            "The optional `huggingface-hub` package is required to resolve a cached "
+            "tokenizer by model identifier in offline mode. Install it with "
+            "`pip install chonkie[hub]`, or pass a local tokenizer.json path."
+        ) from e
+
+    cached_file = try_to_load_from_cache(identifier, "tokenizer.json", revision="main")
+    if isinstance(cached_file, (str, os.PathLike)):
+        cached_path = Path(cached_file)
+        if cached_path.is_file():
+            return cached_path
+
+    raise FileNotFoundError(
+        f"Tokenizer file for {identifier!r} was not found locally or in the "
+        "Hugging Face cache; offline mode does not allow Hub downloads."
+    )
+
+
 def _create_auto_tokenizer_from_string(tokenizer: str) -> "AutoTokenizer":
     if tokenizer_cls := _chonkie_tokenizer_classes.get(tokenizer):
         return ChonkieAutoTokenizer(tokenizer_cls())
@@ -506,7 +539,8 @@ def _create_auto_tokenizer_from_string(tokenizer: str) -> "AutoTokenizer":
 
         for name in tokenizer_names:
             try:
-                return TokenizersAutoTokenizer(HFTokenizer.from_pretrained(name))
+                tokenizer_file = _resolve_huggingface_tokenizer_file(name)
+                return TokenizersAutoTokenizer(HFTokenizer.from_file(str(tokenizer_file)))
             except Exception as e:
                 backend_errors[f"tokenizers ({name})"] = str(e)
 

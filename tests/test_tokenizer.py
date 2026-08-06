@@ -1,6 +1,7 @@
 """Unit tests for the tokenizer module."""
 
 import sys
+from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
@@ -904,19 +905,41 @@ def test_online_string_init_keeps_tokie_precedence(monkeypatch: pytest.MonkeyPat
 def test_offline_string_init_uses_tokenizers_backend(
     monkeypatch: pytest.MonkeyPatch,
     offline_env_var: str,
+    tmp_path: Path,
 ) -> None:
-    """Test that offline string resolution uses the local Hugging Face backend."""
-    calls: list[str] = []
+    """Test that offline string resolution uses only a local Hugging Face cache file."""
+    cache_file = tmp_path / "tokenizer.json"
+    cache_file.write_text("{}")
+    cache_requests: list[str] = []
+    loaded_files: list[str] = []
 
     class FakeTokenizer:
         @classmethod
-        def from_pretrained(cls, identifier: str) -> "FakeTokenizer":
-            calls.append(identifier)
+        def from_file(cls, path: str) -> "FakeTokenizer":
+            loaded_files.append(path)
             return cls()
+
+        @classmethod
+        def from_pretrained(cls, identifier: str) -> "FakeTokenizer":
+            raise AssertionError(f"Hub loading was attempted for {identifier!r}")
 
     fake_tokenizers = ModuleType("tokenizers")
     setattr(fake_tokenizers, "Tokenizer", FakeTokenizer)
     monkeypatch.setitem(sys.modules, "tokenizers", fake_tokenizers)
+
+    import huggingface_hub
+
+    def load_from_cache(identifier: str, filename: str, **_: Any) -> str | None:
+        assert filename == "tokenizer.json"
+        cache_requests.append(identifier)
+        return str(cache_file) if identifier == "openai-community/gpt2" else None
+
+    monkeypatch.setattr(huggingface_hub, "try_to_load_from_cache", load_from_cache)
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        lambda *args, **kwargs: pytest.fail("offline resolution must not download from the Hub"),
+    )
     monkeypatch.setenv(offline_env_var, "1")
     for variable in {"HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"} - {offline_env_var}:
         monkeypatch.delenv(variable, raising=False)
@@ -924,7 +947,87 @@ def test_offline_string_init_uses_tokenizers_backend(
     tokenizer = AutoTokenizer("gpt2")
 
     assert tokenizer._backend == "tokenizers"
-    assert calls == ["openai-community/gpt2"]
+    assert cache_requests == ["openai-community/gpt2"]
+    assert loaded_files == [str(cache_file)]
+
+
+def test_offline_string_init_falls_back_to_requested_identifier(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Test that offline resolution preserves mapped-name fallback ordering."""
+    cache_file = tmp_path / "tokenizer.json"
+    cache_file.write_text("{}")
+    cache_requests: list[str] = []
+
+    class FakeTokenizer:
+        @classmethod
+        def from_file(cls, path: str) -> "FakeTokenizer":
+            assert path == str(cache_file)
+            return cls()
+
+    fake_tokenizers = ModuleType("tokenizers")
+    setattr(fake_tokenizers, "Tokenizer", FakeTokenizer)
+    monkeypatch.setitem(sys.modules, "tokenizers", fake_tokenizers)
+
+    import huggingface_hub
+
+    def load_from_cache(identifier: str, filename: str, **_: Any) -> str | None:
+        assert filename == "tokenizer.json"
+        cache_requests.append(identifier)
+        return str(cache_file) if identifier == "gpt2" else None
+
+    monkeypatch.setattr(huggingface_hub, "try_to_load_from_cache", load_from_cache)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
+
+    tokenizer = AutoTokenizer("gpt2")
+
+    assert tokenizer._backend == "tokenizers"
+    assert cache_requests == ["openai-community/gpt2", "gpt2"]
+
+
+def test_offline_string_init_through_chunker_and_refinery(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Test offline string resolution through the affected public entry points."""
+    from tokenizers import Tokenizer as RealHFTokenizer
+    from tokenizers.models import WordLevel
+
+    from chonkie import Chunk, RecursiveChunker
+    from chonkie.refinery import OverlapRefinery
+
+    cache_file = tmp_path / "tokenizer.json"
+    RealHFTokenizer(WordLevel({"[UNK]": 0, "hello": 1, "world": 2}, unk_token="[UNK]")).save(
+        str(cache_file)
+    )
+
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "try_to_load_from_cache",
+        lambda *args, **kwargs: str(cache_file),
+    )
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        lambda *args, **kwargs: pytest.fail("offline resolution must not download from the Hub"),
+    )
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
+
+    chunker = RecursiveChunker(tokenizer="gpt2", chunk_size=8, min_characters_per_chunk=1)
+    refinery = OverlapRefinery(tokenizer="gpt2", context_size=1)
+
+    assert chunker.tokenizer._backend == "tokenizers"
+    assert refinery.tokenizer._backend == "tokenizers"
+    assert chunker.chunk("hello world")
+    assert refinery.refine([
+        Chunk(text="hello", start_index=0, end_index=5, token_count=1),
+        Chunk(text="world", start_index=6, end_index=11, token_count=1),
+    ])
 
 
 def test_offline_string_init_reports_missing_tokenizers(monkeypatch: pytest.MonkeyPatch) -> None:
