@@ -1,5 +1,7 @@
 """Unit tests for the tokenizer module."""
 
+import sys
+from types import ModuleType
 from typing import Any, Callable
 
 import pytest
@@ -9,6 +11,7 @@ from chonkie.tokenizer import (
     AutoTokenizer,
     ByteTokenizer,
     CharacterTokenizer,
+    InvalidTokenizerError,
     WordTokenizer,
 )
 
@@ -873,6 +876,66 @@ def test_tokenizer_batch_operations_consistency() -> None:
 
 
 ### Tokie Backend Tests ###
+
+
+def test_online_string_init_keeps_tokie_precedence(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that online string resolution keeps the existing tokie backend first."""
+    calls: list[str] = []
+
+    class FakeTokieTokenizer:
+        @classmethod
+        def from_pretrained(cls, identifier: str) -> "FakeTokieTokenizer":
+            calls.append(identifier)
+            return cls()
+
+    fake_tokie = ModuleType("tokie")
+    setattr(fake_tokie, "Tokenizer", FakeTokieTokenizer)
+    monkeypatch.setitem(sys.modules, "tokie", fake_tokie)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "0")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "0")
+
+    tokenizer = AutoTokenizer("gpt2")
+
+    assert tokenizer._backend == "tokie"
+    assert calls == ["openai-community/gpt2"]
+
+
+@pytest.mark.parametrize("offline_env_var", ["HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"])
+def test_offline_string_init_uses_tokenizers_backend(
+    monkeypatch: pytest.MonkeyPatch,
+    offline_env_var: str,
+) -> None:
+    """Test that offline string resolution uses the local Hugging Face backend."""
+    calls: list[str] = []
+
+    class FakeTokenizer:
+        @classmethod
+        def from_pretrained(cls, identifier: str) -> "FakeTokenizer":
+            calls.append(identifier)
+            return cls()
+
+    fake_tokenizers = ModuleType("tokenizers")
+    setattr(fake_tokenizers, "Tokenizer", FakeTokenizer)
+    monkeypatch.setitem(sys.modules, "tokenizers", fake_tokenizers)
+    monkeypatch.setenv(offline_env_var, "1")
+    for variable in {"HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE"} - {offline_env_var}:
+        monkeypatch.delenv(variable, raising=False)
+
+    tokenizer = AutoTokenizer("gpt2")
+
+    assert tokenizer._backend == "tokenizers"
+    assert calls == ["openai-community/gpt2"]
+
+
+def test_offline_string_init_reports_missing_tokenizers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that offline resolution fails clearly when tokenizers is unavailable."""
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setitem(sys.modules, "tokenizers", ModuleType("tokenizers"))
+
+    with pytest.raises(InvalidTokenizerError, match="offline mode") as error:
+        AutoTokenizer("gpt2")
+
+    assert "pip install chonkie[tokenizers]" in str(error.value)
 
 
 @pytest.mark.parametrize("model_name", ["gpt2", "cl100k_base", "o200k_base", "p50k_base"])

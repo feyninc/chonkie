@@ -1,6 +1,7 @@
 """Module for abstracting tokeinization logic."""
 
 import inspect
+import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -23,6 +24,8 @@ _TIKTOKEN_TO_TOKIE_MAPPING = {
     "p50k_base": "Xenova/text-davinci-003",
     "gpt2": "openai-community/gpt2",
 }
+_HUGGINGFACE_OFFLINE_ENV_VARS = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+_HUGGINGFACE_TRUE_VALUES = {"1", "ON", "YES", "TRUE"}
 
 
 class TokenizerProtocol(Protocol):
@@ -468,15 +471,52 @@ class InvalidTokenizerError(ValueError):
         self.backend_errors = backend_errors
 
 
+def _is_huggingface_offline() -> bool:
+    """Return whether Hugging Face offline mode is enabled."""
+    return any(
+        os.getenv(variable, "").strip().upper() in _HUGGINGFACE_TRUE_VALUES
+        for variable in _HUGGINGFACE_OFFLINE_ENV_VARS
+    )
+
+
 def _create_auto_tokenizer_from_string(tokenizer: str) -> "AutoTokenizer":
     if tokenizer_cls := _chonkie_tokenizer_classes.get(tokenizer):
         return ChonkieAutoTokenizer(tokenizer_cls())
 
-    from tokie import Tokenizer as TokieTokenizer
-
     backend_errors = {}
 
     tokie_name = _TIKTOKEN_TO_TOKIE_MAPPING.get(tokenizer)
+
+    if _is_huggingface_offline():
+        tokenizer_names = [tokie_name] if tokie_name is not None else []
+        if tokenizer not in tokenizer_names:
+            tokenizer_names.append(tokenizer)
+
+        try:
+            from tokenizers import Tokenizer as HFTokenizer
+        except ImportError as e:
+            backend_errors["tokenizers"] = (
+                "The optional `tokenizers` package is required to load a tokenizer "
+                "in offline mode. Install it with `pip install chonkie[tokenizers]`."
+            )
+            raise InvalidTokenizerError(
+                f"Tokenizer {tokenizer!r} could not be loaded in offline mode: {backend_errors}",
+                backend_errors=backend_errors,
+            ) from e
+
+        for name in tokenizer_names:
+            try:
+                return TokenizersAutoTokenizer(HFTokenizer.from_pretrained(name))
+            except Exception as e:
+                backend_errors[f"tokenizers ({name})"] = str(e)
+
+        raise InvalidTokenizerError(
+            f"Tokenizer {tokenizer!r} could not be loaded in offline mode: {backend_errors}",
+            backend_errors=backend_errors,
+        )
+
+    from tokie import Tokenizer as TokieTokenizer
+
     if tokie_name is not None:
         try:
             return TokieAutoTokenizer(TokieTokenizer.from_pretrained(tokie_name))
