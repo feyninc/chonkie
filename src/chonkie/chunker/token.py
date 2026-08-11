@@ -233,18 +233,24 @@ class TokenChunker(BaseChunker):
 
     def _process_batch(self, texts: list[str]) -> list[list[Chunk]]:
         """Process a batch of texts."""
-        # encode the texts into tokens in a batch
-        tokens_list = self.tokenizer.encode_batch(texts)
-        result: list = []
+        result: list[list[Chunk] | None] = [None] * len(texts)
+        fallback_indices: list[int] = []
 
-        for text, tokens in zip(texts, tokens_list):
-            if not tokens:
-                result.append([])
-                continue
-
+        for index, text in enumerate(texts):
             offset_chunks = self._chunk_with_offsets(text)
-            if offset_chunks is not None:
-                result.append(offset_chunks)
+            if offset_chunks is None:
+                fallback_indices.append(index)
+                continue
+            result[index] = offset_chunks
+
+        if not fallback_indices:
+            return [chunks if chunks is not None else [] for chunks in result]
+
+        fallback_texts = [texts[index] for index in fallback_indices]
+        tokens_list = self.tokenizer.encode_batch(fallback_texts)
+        for index, tokens in zip(fallback_indices, tokens_list):
+            if not tokens:
+                result[index] = []
                 continue
 
             # get the token groups
@@ -258,9 +264,9 @@ class TokenChunker(BaseChunker):
 
             # create the chunks from the token groups and token counts
             chunks = self._create_chunks(chunk_texts, token_groups, token_counts)
-            result.append(chunks)
+            result[index] = chunks
 
-        return result
+        return [chunks if chunks is not None else [] for chunks in result]
 
     def chunk_batch(  # ty: ignore[invalid-method-override]
         self,

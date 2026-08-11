@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import cast
 
 import pytest
@@ -12,6 +13,8 @@ from tokie import Tokenizer as TokieTokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
 from chonkie import Chunk, TokenChunker
+from chonkie.tokenizer import Tokenizer as ChonkieTokenizer
+from chonkie.tokenizer import TokenizerEncoding
 
 
 @pytest.fixture
@@ -66,6 +69,48 @@ def sample_batch(sample_text: str) -> list[str]:
         batch.append(base_text * repeats)
 
     return batch
+
+
+class CountingTokenizer(ChonkieTokenizer):
+    """Small tokenizer double for observing batch and offset encoding calls."""
+
+    def __init__(self, offset_texts: set[str]) -> None:
+        """Initialize the tokenizer with texts that support offsets."""
+        super().__init__()
+        self.offset_texts = offset_texts
+        self.offset_calls: list[str] = []
+        self.batch_calls: list[list[str]] = []
+
+    def __repr__(self) -> str:
+        """Return the tokenizer representation."""
+        return "CountingTokenizer()"
+
+    def tokenize(self, text: str) -> list[str]:
+        """Tokenize text into individual characters."""
+        return list(text)
+
+    def encode(self, text: str) -> list[int]:
+        """Encode each character as its Unicode code point."""
+        return [ord(character) for character in text]
+
+    def encode_batch(self, texts: Sequence[str]) -> list[list[int]]:
+        """Record and encode a batch of texts."""
+        self.batch_calls.append(list(texts))
+        return [self.encode(text) for text in texts]
+
+    def encode_with_offsets(self, text: str) -> TokenizerEncoding | None:
+        """Return character offsets for configured texts only."""
+        self.offset_calls.append(text)
+        if text not in self.offset_texts:
+            return None
+        return TokenizerEncoding(
+            ids=self.encode(text),
+            offsets=[(index, index + 1) for index in range(len(text))],
+        )
+
+    def decode(self, tokens: Sequence[int]) -> str:
+        """Decode Unicode code points back into text."""
+        return "".join(chr(token) for token in tokens)
 
 
 @pytest.fixture
@@ -230,6 +275,24 @@ def test_token_chunker_batch_chunking(tiktokenizer: Encoding, sample_batch: list
     assert all([all([chunk.text is not None for chunk in chunks]) for chunks in chunks])
     assert all([all([chunk.start_index is not None for chunk in chunks]) for chunks in chunks])
     assert all([all([chunk.end_index is not None for chunk in chunks]) for chunks in chunks])
+
+
+def test_token_chunker_batch_avoids_duplicate_offset_encoding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Batch chunking should not re-encode texts that provide offsets."""
+    offset_text = "offset"
+    fallback_text = "fallback"
+    tokenizer = CountingTokenizer({offset_text})
+    chunker = TokenChunker(tokenizer=tokenizer, chunk_size=2, chunk_overlap=0)
+    monkeypatch.setattr(chunker.tokenizer, "encode_with_offsets", tokenizer.encode_with_offsets)
+
+    chunks = chunker.chunk_batch([offset_text, fallback_text], show_progress_bar=False)
+
+    assert tokenizer.offset_calls == [offset_text, fallback_text]
+    assert tokenizer.batch_calls == [[fallback_text]]
+    assert [chunk.text for chunk in chunks[0]] == ["of", "fs", "et"]
+    assert [chunk.text for chunk in chunks[1]] == ["fa", "ll", "ba", "ck"]
 
 
 def test_token_chunker_repr(tiktokenizer: Encoding) -> None:
