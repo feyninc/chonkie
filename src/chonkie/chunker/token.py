@@ -11,7 +11,7 @@ from tqdm import trange
 from chonkie.chunker.base import BaseChunker
 from chonkie.logger import get_logger
 from chonkie.pipeline import chunker
-from chonkie.tokenizer import TokenizerProtocol
+from chonkie.tokenizer import TokenizerEncoding, TokenizerProtocol
 from chonkie.types import Chunk
 
 logger = get_logger(__name__)
@@ -64,8 +64,24 @@ class TokenChunker(BaseChunker):
         chunk_texts: Sequence[str],
         token_groups: list[list[int]],
         token_counts: list[int],
+        text_spans: Sequence[tuple[int, int]] | None = None,
     ) -> list[Chunk]:
         """Create chunks from a list of texts."""
+        if text_spans is not None:
+            return [
+                Chunk(
+                    text=chunk_text,
+                    start_index=start_index,
+                    end_index=end_index,
+                    token_count=token_count,
+                )
+                for chunk_text, (start_index, end_index), token_count in zip(
+                    chunk_texts,
+                    text_spans,
+                    token_counts,
+                )
+            ]
+
         # Find the overlap lengths for index calculation
         if self.chunk_overlap > 0:
             # we get the overlap texts, that gives you the start_index for the next chunk
@@ -102,13 +118,82 @@ class TokenChunker(BaseChunker):
 
         return chunks
 
+    def _token_group_ranges(
+        self,
+        token_count: int,
+        offsets: Sequence[tuple[int, int]] | None = None,
+    ) -> list[tuple[int, int]]:
+        """Return token ranges, expanding boundaries inside a character."""
+        if offsets is None or len(offsets) != token_count:
+            step = self.chunk_size - self.chunk_overlap
+            ranges = []
+            for start in range(0, token_count, step):
+                end = min(start + self.chunk_size, token_count)
+                ranges.append((start, end))
+                if end == token_count:
+                    break
+            return ranges
+
+        ranges = []
+        start = 0
+        while start < token_count:
+            start_character = offsets[start][0]
+            while start > 0 and offsets[start - 1][1] > start_character:
+                start -= 1
+
+            end = min(start + self.chunk_size, token_count)
+            end_character = offsets[end - 1][1]
+            while end < token_count and offsets[end][0] < end_character:
+                end += 1
+                end_character = max(end_character, offsets[end - 1][1])
+
+            ranges.append((start, end))
+            if end == token_count:
+                break
+
+            next_start = (
+                end if self.chunk_overlap == 0 else max(start + 1, end - self.chunk_overlap)
+            )
+            if next_start < token_count:
+                next_start_character = offsets[next_start][0]
+                while next_start > 0 and offsets[next_start - 1][1] > next_start_character:
+                    next_start -= 1
+            if next_start <= start:
+                next_start = end
+            start = next_start
+
+        return ranges
+
     def _token_group_generator(self, tokens: Sequence[int]) -> Generator[list[int], None, None]:
         """Generate chunks from a list of tokens."""
-        for start in range(0, len(tokens), self.chunk_size - self.chunk_overlap):
-            end = min(start + self.chunk_size, len(tokens))
+        for start, end in self._token_group_ranges(len(tokens)):
             yield list(tokens[start:end])
-            if end == len(tokens):
-                break
+
+    def _chunk_with_offsets(self, text: str) -> list[Chunk] | None:
+        """Chunk text using backend-provided offsets when available."""
+        encoded: TokenizerEncoding | None = self.tokenizer.encode_with_offsets(text)
+        if encoded is None:
+            return None
+
+        tokens = list(encoded.ids)
+        if not tokens:
+            return []
+
+        offsets = list(encoded.offsets)
+        if len(offsets) != len(tokens):
+            return None
+
+        ranges = self._token_group_ranges(len(tokens), offsets)
+        token_groups = [tokens[start:end] for start, end in ranges]
+        text_spans = [(offsets[start][0], offsets[end - 1][1]) for start, end in ranges]
+        chunk_texts = [text[start:end] for start, end in text_spans]
+        token_counts = [end - start for start, end in ranges]
+        return self._create_chunks(
+            chunk_texts,
+            token_groups,
+            token_counts,
+            text_spans=text_spans,
+        )
 
     def chunk(self, text: str) -> list[Chunk]:
         """Split text into overlapping chunks of specified token size.
@@ -124,6 +209,11 @@ class TokenChunker(BaseChunker):
             return []
 
         logger.debug(f"Chunking text of length {len(text)} with chunk_size={self.chunk_size}")
+
+        offset_chunks = self._chunk_with_offsets(text)
+        if offset_chunks is not None:
+            logger.info(f"Created {len(offset_chunks)} chunks using tokenizer offsets")
+            return offset_chunks
 
         # Encode full text
         text_tokens = self.tokenizer.encode(text)
@@ -147,9 +237,14 @@ class TokenChunker(BaseChunker):
         tokens_list = self.tokenizer.encode_batch(texts)
         result: list = []
 
-        for tokens in tokens_list:
+        for text, tokens in zip(texts, tokens_list):
             if not tokens:
                 result.append([])
+                continue
+
+            offset_chunks = self._chunk_with_offsets(text)
+            if offset_chunks is not None:
+                result.append(offset_chunks)
                 continue
 
             # get the token groups

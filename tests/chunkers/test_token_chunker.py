@@ -8,6 +8,7 @@ import pytest
 import tiktoken
 from tiktoken import Encoding
 from tokenizers import Tokenizer
+from tokie import Tokenizer as TokieTokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
 from chonkie import Chunk, TokenChunker
@@ -35,6 +36,15 @@ def tokenizer() -> Tokenizer:
         return Tokenizer.from_pretrained("gpt2")
     except (OSError, ValueError) as e:
         pytest.skip(f"Could not load tokenizers tokenizer: {e}")
+
+
+@pytest.fixture
+def tokie_tokenizer() -> TokieTokenizer:
+    """Fixture that returns a byte-level GPT-2 tokenizer from tokie."""
+    try:
+        return TokieTokenizer.from_pretrained("gpt2")
+    except (OSError, RuntimeError, ValueError) as e:
+        pytest.skip(f"Could not load tokie tokenizer: {e}")
 
 
 @pytest.fixture
@@ -297,6 +307,27 @@ def test_token_chunker_indices_batch(tiktokenizer: Encoding, sample_text: str) -
     chunker = TokenChunker(tokenizer=tiktokenizer, chunk_size=512, chunk_overlap=128)
     chunks = chunker.chunk_batch([sample_text] * 10)[-1]
     verify_chunk_indices(chunks, sample_text)
+
+
+def test_token_chunker_multibyte_offsets(
+    tokie_tokenizer: TokieTokenizer,
+) -> None:
+    """Test that byte-level token boundaries preserve multi-byte characters."""
+    text = "a🩺 hello world"
+    chunker = TokenChunker(tokenizer=tokie_tokenizer, chunk_size=2, chunk_overlap=0)
+
+    chunks = chunker.chunk(text)
+    batch_chunks = chunker.chunk_batch([text], show_progress_bar=False)[0]
+
+    expected = [("a🩺", 0, 2), (" hello world", 2, 14)]
+
+    for result in (chunks, batch_chunks):
+        assert [(chunk.text, chunk.start_index, chunk.end_index) for chunk in result] == expected
+        assert result
+        assert all(chunk.text for chunk in result)
+        assert all(chunk.end_index > chunk.start_index for chunk in result)
+        assert all(chunk.text == text[chunk.start_index : chunk.end_index] for chunk in result)
+        assert "".join(chunk.text for chunk in result) == text
 
 
 def test_token_chunker_return_type(tiktokenizer: Encoding, sample_text: str) -> None:

@@ -2,9 +2,10 @@
 
 import inspect
 from abc import ABC, abstractmethod
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
 
 from chonkie.logger import get_logger
 
@@ -23,6 +24,40 @@ _TIKTOKEN_TO_TOKIE_MAPPING = {
     "p50k_base": "Xenova/text-davinci-003",
     "gpt2": "openai-community/gpt2",
 }
+
+
+class TokenizerEncoding(NamedTuple):
+    """Token IDs and character offsets for an encoded string."""
+
+    ids: Sequence[int]
+    offsets: Sequence[tuple[int, int]]
+
+
+def _byte_offsets_to_char_offsets(
+    text: str,
+    offsets: Sequence[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    """Convert UTF-8 byte offsets to Python string character offsets.
+
+    Tokie reports offsets into the UTF-8 representation of the input. A token
+    can therefore start or end in the middle of a multi-byte character. Starts
+    are rounded down and ends are rounded up so a token span always contains
+    complete characters.
+    """
+    byte_boundaries = [0]
+    byte_position = 0
+    for character in text:
+        byte_position += len(character.encode("utf-8"))
+        byte_boundaries.append(byte_position)
+
+    max_byte_position = byte_boundaries[-1]
+    return [
+        (
+            bisect_right(byte_boundaries, min(start, max_byte_position)) - 1,
+            bisect_left(byte_boundaries, min(end, max_byte_position)),
+        )
+        for start, end in offsets
+    ]
 
 
 class TokenizerProtocol(Protocol):
@@ -558,6 +593,10 @@ class AutoTokenizer:
         """Encode the text into tokens."""
         return self.tokenizer.encode(text)
 
+    def encode_with_offsets(self, text: str) -> TokenizerEncoding | None:
+        """Encode text with character offsets when the backend supports it."""
+        return None
+
     def decode(self, tokens: Sequence[int]) -> str:
         """Decode the tokens back into text."""
         return self.tokenizer.decode(tokens)
@@ -656,6 +695,14 @@ class TokieAutoTokenizer(AutoTokenizer):
     def encode(self, text: str) -> list[int]:
         """Encode text and extract token IDs."""
         return self.tokenizer.encode(text, add_special_tokens=False).ids
+
+    def encode_with_offsets(self, text: str) -> TokenizerEncoding:
+        """Encode text and convert tokie's byte offsets to character offsets."""
+        encoding = self.tokenizer.encode_with_offsets(text, add_special_tokens=False)
+        return TokenizerEncoding(
+            encoding.ids,
+            _byte_offsets_to_char_offsets(text, encoding.offsets),
+        )
 
     def decode(self, tokens: Sequence[int]) -> str:
         """Decode token IDs back to text."""
