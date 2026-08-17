@@ -205,6 +205,10 @@ class Tokenizer(ABC):
         """
         return [self.encode(text) for text in texts]
 
+    def encode_with_offsets(self, text: str) -> TokenizerEncoding | None:
+        """Encode text with character offsets when supported."""
+        return None
+
     def decode_batch(self, token_sequences: Sequence[Sequence[int]]) -> Sequence[str]:
         """Batch decode a list of tokens back into text.
 
@@ -595,6 +599,8 @@ class AutoTokenizer:
 
     def encode_with_offsets(self, text: str) -> TokenizerEncoding | None:
         """Encode text with character offsets when the backend supports it."""
+        if hasattr(self.tokenizer, "encode_with_offsets"):
+            return self.tokenizer.encode_with_offsets(text)
         return None
 
     def decode(self, tokens: Sequence[int]) -> str:

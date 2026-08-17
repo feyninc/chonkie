@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import tiktoken
 from tiktoken import Encoding
 from tokenizers import Tokenizer
-from tokie import Tokenizer as TokieTokenizer
 from transformers import AutoTokenizer, PreTrainedTokenizerFast
 
 from chonkie import Chunk, TokenChunker
 from chonkie.tokenizer import Tokenizer as ChonkieTokenizer
-from chonkie.tokenizer import TokenizerEncoding
+from chonkie.tokenizer import TokenizerEncoding, _byte_offsets_to_char_offsets
+
+if TYPE_CHECKING:
+    from tokie import Tokenizer as TokieTokenizer
 
 
 @pytest.fixture
@@ -42,10 +44,11 @@ def tokenizer() -> Tokenizer:
 
 
 @pytest.fixture
-def tokie_tokenizer() -> TokieTokenizer:
+def tokie_tokenizer() -> "TokieTokenizer":
     """Fixture that returns a byte-level GPT-2 tokenizer from tokie."""
+    tokie = pytest.importorskip("tokie", reason="tokie not installed")
     try:
-        return TokieTokenizer.from_pretrained("gpt2")
+        return tokie.Tokenizer.from_pretrained("gpt2")
     except (OSError, RuntimeError, ValueError) as e:
         pytest.skip(f"Could not load tokie tokenizer: {e}")
 
@@ -277,15 +280,12 @@ def test_token_chunker_batch_chunking(tiktokenizer: Encoding, sample_batch: list
     assert all([all([chunk.end_index is not None for chunk in chunks]) for chunks in chunks])
 
 
-def test_token_chunker_batch_avoids_duplicate_offset_encoding(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_token_chunker_batch_avoids_duplicate_offset_encoding() -> None:
     """Batch chunking should not re-encode texts that provide offsets."""
     offset_text = "offset"
     fallback_text = "fallback"
     tokenizer = CountingTokenizer({offset_text})
     chunker = TokenChunker(tokenizer=tokenizer, chunk_size=2, chunk_overlap=0)
-    monkeypatch.setattr(chunker.tokenizer, "encode_with_offsets", tokenizer.encode_with_offsets)
 
     chunks = chunker.chunk_batch([offset_text, fallback_text], show_progress_bar=False)
 
@@ -293,6 +293,22 @@ def test_token_chunker_batch_avoids_duplicate_offset_encoding(
     assert tokenizer.batch_calls == [[fallback_text]]
     assert [chunk.text for chunk in chunks[0]] == ["of", "fs", "et"]
     assert [chunk.text for chunk in chunks[1]] == ["fa", "ll", "ba", "ck"]
+
+
+def test_byte_offsets_to_char_offsets_expands_partial_multibyte_tokens() -> None:
+    """Byte offsets split inside UTF-8 characters should expand to valid character spans."""
+    text = "a🩺b"
+
+    offsets = _byte_offsets_to_char_offsets(
+        text,
+        [
+            (0, 2),
+            (2, 4),
+            (4, 6),
+        ],
+    )
+
+    assert offsets == [(0, 2), (1, 2), (1, 3)]
 
 
 def test_token_chunker_repr(tiktokenizer: Encoding) -> None:
@@ -373,7 +389,7 @@ def test_token_chunker_indices_batch(tiktokenizer: Encoding, sample_text: str) -
 
 
 def test_token_chunker_multibyte_offsets(
-    tokie_tokenizer: TokieTokenizer,
+    tokie_tokenizer: "TokieTokenizer",
 ) -> None:
     """Test that byte-level token boundaries preserve multi-byte characters."""
     text = "a🩺 hello world"
