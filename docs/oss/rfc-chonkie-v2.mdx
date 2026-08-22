@@ -1,0 +1,58 @@
+---
+title: "[RFC] Chonkie v2"
+description: Course correction for Chonkie v2
+---
+
+over the course of last year, chonkie has received a lot of love from all of its userbase. We started the year with just about 1M+ downloads and <10k daily downloads at peak. Now chonkie has 1.3M downloads a month, 8M life time downloads and 45k daily average downloads. we're blessed and grateful.
+
+in the process, over the last year we shipped a lot to chonkie. we made a new port of chonkie to js with multiple pluggable packages to manage dependencies (especially around `tokenizers` and `tree-sitter`; they were a pain to deal with), wrote a bunch of new integrations with other services, created [the fastest chunker](memchunk) ever, added pipelines and more.
+
+somewhere along the line, we slowly started becoming a framework for search applications and we didn't stop it. we should have.
+
+chonkie gave a promise of being a bloat-free, chunking library that ensures correctness and gives the primitives necessary to write good search systems. that was our day 1, and somehow, chonkie now feels quite bloated.
+
+chonkie has 23k lines of code and 24k lines of tests. we have even more lines of documentation (which to someone who has been here since day 1, knows i hate having more lines of documentation > lines of code; code should be obvious to use and human in it's structure). thankfully we use lazy loading and optional installs so our default install size is still small, but that adds so much complexity in figuring out install conditions. complexity is the biggest killer for adoption.
+
+we have 12 chunkers in the library today, which further adds complexity that is somewhat uneeded. we ran 100s of tests on our MTCB benchmark with various embedding services, chunk sizes, overlaps and refinements, and we noticed a pattern. generally, semantic chunker, neural chunker and slumber chunker (agentic chunker) were always either worse than recursive chunker by a lot or within 2-3% margin of recursive chunker. especially with new age embedding models, quality loss from chunking matters less than with old `text-embedding-ada` style embedders where chunking gave boosts over 10% in recall back in 2023-2024.
+
+furthermore, upon inspecting 100 of our top users, we realized non of the integrations, handshakes, chefs and more ever mattered. chonkie was being used for it's inteded purpose of a really good chunking service.
+
+with AI being much more useful since December of 2025, most integrations and plumbing gets written in pure python without needing a lot of abstraction from frameworks. what's still needed is a good set of primitives that guarentee correctness of functions. while AI can write you a tokenizer, using Huggingface Tokenizers is always going to be prefered. that's what we want for chonkie.
+
+chonkie v2 is a course correction.
+
+## goals
+
+ours goals for chonkie v2 is:
+
+1. a small core with readable 1-2k lines of rust code
+
+- keeping the core chunkers like token, sentence, recursive and code and some small functionality and removing the non essential.
+- fast chunker (and our `chunk` crate) will become the foundation for the new re-written chunkers in rust. the crate stays independent.
+- removing all SDK plumbing that connects to other tools (easy to write now; non-essential)
+- tokie becomes the default tokenizer for chonkie.
+
+2. same chonkie correctness guarenttees: reconstructable text, reproducibility, correct token counting and edge cases handled.
+3. less than 1MB of total binary size
+4. bindings to python and js/ts (with extensibility for more in the future)
+5. a small cli + server set-up for high performance chunking
+6. a small docker container to ship with it
+
+remove stale cloud chunkers code. server api will have good documentation and clients can be made in app.
+
+## benefits
+
+- small footprint
+- well tested (since smaller scope)
+- less lines of documentation to cover the surface
+- focused efforts to improve core functionality like code chunker
+- high performance server setup
+- easier to maintain (for us) -- faster patching, fixing issues and prs in the future.
+
+## p.s. some important points to note
+
+- chonkie v1.7 will be the last v1.x release. all fixes and patches will go towards v2.0. please bear with us.
+- chonkiejs will stop having updates meanwhile. chonkie v2.0 js/ts bindings will become the new chonkiejs.
+- in the process, we will freeze the main for prs for now. please bear with us
+- we will release a migration guide from 1.x -> 2.0 for our users.
+- we will create a skill for AI to use to migrate users to chonkie; for ease.

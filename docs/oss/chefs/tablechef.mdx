@@ -1,0 +1,143 @@
+---
+title: TableChef
+sidebarTitle: TableChef
+icon: table
+iconType: solid
+description: Extract tables from markdown text (including HTML tables) and prepare them for future usage.
+---
+
+The `TableChef` is a versatile chef that extracts and processes tables from multiple sources. It can read CSV and Excel files, convert them to markdown format, or extract tables from markdown text. The parsed tables are returned in a structured format ready for downstream processing.
+
+## Installation
+
+TableChef requires the `pandas` library for processing CSV and Excel files.
+
+```bash
+pip install "chonkie[table]"
+```
+
+<Info>
+  For more installation options, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import TableChef
+
+chef = TableChef()
+```
+
+## Methods
+
+### process()
+
+Process a file or markdown string to extract tables.
+
+#### Parameters
+
+<ParamField path="path" type="Union[str, Path]" required>
+  Can be a file path (CSV/Excel) or a markdown string containing tables
+</ParamField>
+
+#### Returns
+
+<ResponseField name="" type="list[MarkdownTable] | None">
+  A list of `MarkdownTable` objects. `None` if no tables are found
+</ResponseField>
+
+### process_batch()
+
+Process multiple files or markdown strings at once.
+
+#### Parameters
+
+<ParamField path="paths" type="Union[list[str], list[Path]]" required>
+  List of file paths or markdown strings to process
+</ParamField>
+
+#### Returns
+
+<ResponseField name="" type="list[MarkdownTable] | None">
+  A list of `MarkdownTable` objects. `None` if no tables are found
+</ResponseField>
+
+## Usage
+
+<CodeGroup>
+
+```python Files (CSV/Excel)
+from chonkie import TableChef
+
+# Initialize the chef
+chef = TableChef()
+
+# Process a CSV file
+doc = chef.process("data.csv")
+print(f"Extracted {len(doc.tables)} table from CSV")
+
+# Process an Excel file (all sheets)
+doc = chef.process("spreadsheet.xlsx")
+print(f"Extracted {len(doc.tables)} tables from Excel")
+```
+
+```python Markdown Tables
+from chonkie import TableChef
+
+chef = TableChef()
+
+markdown = """
+# Data Analysis
+
+| Name | Age | City |
+|------|-----|------|
+| Alice | 25 | New York |
+| Bob | 30 | Paris |
+
+Some text between tables...
+
+| Product | Price |
+|---------|-------|
+| Apple | $1.50 |
+| Banana | $0.75 |
+"""
+
+# Extract all markdown tables
+doc = chef.process(markdown)
+for i, table in enumerate(doc.tables):
+    print(f"Table {i+1} content:\n{table.content}\n")
+```
+
+```python HTML Tables
+from chonkie import TableChef
+
+chef = TableChef()
+
+html_content = """
+<h2>Employee List</h2>
+<table>
+  <thead>
+    <tr><th>ID</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Active</td></tr>
+    <tr><td>2</td><td>Pending</td></tr>
+    <tr><td>3</td><td>Inactive</td></tr>
+    <tr><td>4</td><td>Active</td></tr>
+  </tbody>
+</table>
+"""
+
+# Extract all html tables
+doc = chef.process(html_content)
+for i, table in enumerate(doc.tables):
+    print(f"Table {i+1} content:\n{table.content}\n")
+```
+</CodeGroup>
+
+## Supported File Formats
+
+- **CSV files** (`.csv`) - Comma-separated values
+- **Excel files** (`.xls`, `.xlsx`) - Microsoft Excel spreadsheets
+- **Markdown strings** - Text containing pipe-separated tables or HTML tables (`<table>`)

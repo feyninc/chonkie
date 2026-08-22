@@ -1,0 +1,46 @@
+---
+title: VoyageAIEmbeddings
+sidebarTitle: VoyageAI
+description: Embed text using VoyageAI embeddings
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `VoyageAIEmbeddings` class, which is a wrapper around the VoyageAI API.
+
+## Installation
+
+Embeddings require the `voyageai`, `numpy`, and `tokenizers` libraries. See the [Installation Guide](/oss/installation) for more information.
+
+```bash
+pip install "chonkie[voyageai]"
+```
+
+## Usage
+
+```python
+from chonkie import VoyageAIEmbeddings
+
+# Initialize VoyageAI embeddings
+embeddings = VoyageAIEmbeddings(
+	model="voyage-3-large",           # Optional: specify model
+	api_key="YOUR_VOYAGE_API_KEY",    # Optional: or set VOYAGE_API_KEY env var
+	output_dimension=1024,             # Optional: set output dimension
+	batch_size=64                      # Optional: set batch size
+)
+
+# Embed a single text
+vector = embeddings.embed("Your text here")
+
+# Embed a batch of texts
+vectors = embeddings.embed_batch(["Text 1", "Text 2"])
+```
+
+## Example
+
+```python
+embeddings = VoyageAIEmbeddings()
+vectors = embeddings.embed("your text here")
+# or you can
+vectors = embeddings.embed_batch(["text1", "text2"])
+```

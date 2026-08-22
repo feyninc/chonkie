@@ -1,0 +1,138 @@
+---
+title: "Quick Start"
+description: "Get the Chonkie API server running in under a minute"
+sidebarTitle: "Quick Start"
+icon: "bolt"
+---
+
+## 1. Install
+
+```bash
+pip install "chonkie[api,semantic,code,openai]"
+```
+
+<Note>
+  The `api` extra includes FastAPI and uvicorn. Add `semantic` for the semantic chunker and `code` for the code chunker. The embeddings refinery works out of the box with local models (e.g. `minishlab/potion-base-8M`); add the relevant extra (e.g. `openai`) only if you plan to use API-based embedding providers.
+</Note>
+
+## 2. Start the Server
+
+<CodeGroup>
+
+```bash Default
+chonkie serve
+# 🦛 Starting Chonkie API server on http://0.0.0.0:8000
+# 📚 API docs available at http://0.0.0.0:8000/docs
+# 🔍 Log level: info
+#
+# Press CTRL+C to stop the server
+```
+
+```bash Custom Port
+chonkie serve --port 3000 --reload
+```
+
+```bash Debug Logging
+chonkie serve --log-level debug
+```
+
+```bash Direct Uvicorn
+uvicorn chonkie.api.main:app --host 0.0.0.0 --port 8000
+```
+
+</CodeGroup>
+
+Visit `http://localhost:8000/docs` for the interactive Swagger UI, or `http://localhost:8000/redoc` for ReDoc.
+
+## 3. Make Your First Request
+
+<CodeGroup>
+
+```bash curl
+curl -X POST http://localhost:8000/v1/chunk/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Chonkie makes chunking easy. It splits text into manageable pieces for RAG pipelines.",
+    "chunk_size": 20
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "http://localhost:8000/v1/chunk/token",
+    json={
+        "text": "Chonkie makes chunking easy. It splits text into manageable pieces for RAG pipelines.",
+        "chunk_size": 20,
+    },
+)
+chunks = response.json()
+for chunk in chunks:
+    print(chunk["text"])
+```
+
+```javascript JavaScript
+const response = await fetch("http://localhost:8000/v1/chunk/token", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    text: "Chonkie makes chunking easy. It splits text into manageable pieces for RAG pipelines.",
+    chunk_size: 20,
+  }),
+});
+const chunks = await response.json();
+chunks.forEach(chunk => console.log(chunk.text));
+```
+
+</CodeGroup>
+
+**Response:**
+
+```json
+[
+  {
+    "text": "Chonkie makes chunking easy.",
+    "start_index": 0,
+    "end_index": 28,
+    "token_count": 5
+  },
+  {
+    "text": "It splits text into manageable pieces for RAG pipelines.",
+    "start_index": 29,
+    "end_index": 85,
+    "token_count": 10
+  }
+]
+```
+
+## Or Use Docker
+
+```bash
+docker compose up
+```
+
+The server starts on port `8000`. See the [Docker guide](/oss/api/docker) for the full `docker-compose.yml` and production setup.
+
+## Server Options
+
+| Flag | Default | Description |
+|---|---|---|
+| `--host` | `0.0.0.0` | Bind address |
+| `--port` | `8000` | Port number |
+| `--reload` | `false` | Auto-reload on file changes (development only) |
+| `--log-level` | `info` | Log verbosity: `debug`, `info`, `warning`, `error` |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="All Endpoints" icon="code" href="/oss/api/endpoints">
+    Token, Sentence, Recursive, Semantic, Code, and refineries
+  </Card>
+  <Card title="Pipelines" icon="pipe-section" href="/oss/api/pipelines">
+    Save and execute reusable chunking workflows
+  </Card>
+  <Card title="Docker Deployment" icon="docker" href="/oss/api/docker">
+    Production-ready Docker setup with env vars
+  </Card>
+</CardGroup>

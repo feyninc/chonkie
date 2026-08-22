@@ -1,0 +1,340 @@
+---
+title: "Code Chunker"
+description: "Advanced AST-based code chunking with intelligent semantic preservation"
+icon: "laptop-code"
+---
+
+The experimental CodeChunker provides advanced AST-based code parsing that goes beyond simple line-based splitting to understand and preserve code structure and semantics.
+
+<Warning>
+**Experimental Feature**: This CodeChunker is experimental and may change significantly between versions. Use with caution in production environments.
+</Warning>
+
+## Key Features
+
+- **AST-based parsing** using tree-sitter for accurate code understanding
+- **Automatic language detection** using Magika for seamless multi-language handling
+- **Language-specific rules** for optimal chunking based on programming language
+- **Intelligent grouping** of related code elements (imports, comments, classes)
+- **Semantic preservation** prioritizes code coherence over strict size limits
+- **Multi-language support** for popular programming languages
+- **Recursive splitting** for large code constructs when chunk size is specified
+
+## Installation
+
+To use the experimental CodeChunker, you need the code dependencies:
+
+```bash
+pip install chonkie[code]
+```
+
+## Supported Languages
+
+The experimental CodeChunker supports the following programming languages:
+
+- **Python** - Classes, functions, imports, docstrings
+- **TypeScript** - Functions, classes, interfaces, modules
+- **JavaScript** - Functions, classes, modules, JSX
+- **Rust** - Functions, structs, modules, traits
+- **Go** - Functions, structs, packages, interfaces
+- **Java** - Classes, methods, packages, interfaces
+- **C** - Functions, structs, headers
+- **C++** - Functions, classes, namespaces, structs
+- **C#** - Classes, methods, namespaces, properties
+- **HTML** - Tags, elements, attributes
+- **CSS** - Rules, selectors, properties
+- **Markdown** - Headers, sections, code blocks
+
+## Basic Usage
+
+```python
+from chonkie.experimental import CodeChunker
+
+# Create a code chunker for Python
+chunker = CodeChunker(language="python")
+
+# Chunk some Python code
+code = '''
+import os
+from typing import List
+
+def process_files(directory: str) -> list[str]:
+    """Process all files in a directory."""
+    files = []
+    for filename in os.listdir(directory):
+        if filename.endswith('.py'):
+            files.append(filename)
+    return files
+
+class FileProcessor:
+    def __init__(self, base_dir: str):
+        self.base_dir = base_dir
+        self.processed_count = 0
+    
+    def process(self, filename: str) -> bool:
+        """Process a single file."""
+        # Processing logic here
+        self.processed_count += 1
+        return True
+'''
+
+chunks = chunker.chunk(code)
+for i, chunk in enumerate(chunks):
+    print(f"Chunk {i+1}:")
+    print(chunk.text)
+    print("---")
+```
+
+## Advanced Configuration
+
+### With Chunk Size Limit
+
+```python
+# Set a chunk size limit (chunks may exceed this to preserve semantics)
+chunker = CodeChunker(
+    language="python",
+    chunk_size=2048,  # Target chunk size in characters
+    tokenizer="character"
+)
+```
+
+### Language Auto-Detection
+
+The experimental CodeChunker can automatically detect the programming language using Magika, Google's deep learning-based language detection model:
+
+```python
+# Let the chunker detect the language automatically
+chunker = CodeChunker(language="auto")
+
+# Chunk different types of code - language is detected automatically
+python_code = '''
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+'''
+
+javascript_code = '''
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n-1) + fibonacci(n-2);
+}
+'''
+
+rust_code = '''
+fn fibonacci(n: u32) -> u32 {
+    if n <= 1 { n } else { fibonacci(n-1) + fibonacci(n-2) }
+}
+'''
+
+# All will be chunked with appropriate language-specific rules
+python_chunks = chunker.chunk(python_code)      # Detected as Python
+js_chunks = chunker.chunk(javascript_code)      # Detected as JavaScript  
+rust_chunks = chunker.chunk(rust_code)          # Detected as Rust
+```
+
+<Note>
+**Performance Consideration**: When using `language="auto"`, the chunker will show a warning that auto-detection may affect performance. For better performance in production, specify the language explicitly when known.
+</Note>
+
+### Split Context Control
+
+```python
+# Control whether to add split context information
+chunker = CodeChunker(
+    language="typescript",
+    add_split_context=True  # Include context about split locations
+)
+```
+
+## Understanding Chunk Behavior
+
+### Semantic Preservation
+
+The experimental CodeChunker prioritizes semantic coherence over strict size limits:
+
+```python
+chunker = CodeChunker(language="python", chunk_size=100)
+
+# This class will likely stay together even if it exceeds 100 characters
+code = '''
+class SmallButImportant:
+    def __init__(self):
+        self.value = "important"
+    
+    def get_value(self):
+        return self.value
+'''
+
+chunks = chunker.chunk(code)
+# The class will typically be kept as one chunk for semantic coherence
+```
+
+### Language-Specific Grouping
+
+Different languages have different grouping behaviors:
+
+<AccordionGroup>
+<Accordion title="Python Example" description="Classes, functions, and imports are intelligently grouped" icon="python" iconType="solid">
+
+```python
+# Python code is grouped by logical units
+python_code = '''
+import numpy as np
+import pandas as pd
+
+def data_processor():
+    """Process data using pandas."""
+    return pd.DataFrame()
+
+class DataAnalyzer:
+    def analyze(self, data):
+        return np.mean(data)
+'''
+
+# Likely chunks:
+# 1. Import statements together
+# 2. Function definition
+# 3. Class definition
+```
+
+</Accordion>
+
+<Accordion title="JavaScript Example" description="Modules, functions, and classes are preserved" icon="js" iconType="solid">
+
+```javascript
+// JavaScript/TypeScript grouping
+const code = `
+import { Component } from 'react';
+import { useState } from 'react';
+
+export const MyComponent = () => {
+  const [state, setState] = useState(null);
+  
+  return <div>{state}</div>;
+};
+
+export class DataService {
+  async fetchData() {
+    return fetch('/api/data');
+  }
+}
+`;
+
+// Likely chunks:
+// 1. Import statements
+// 2. Component definition
+// 3. Class definition
+```
+
+</Accordion>
+
+<Accordion title="Rust Example" description="Modules, structs, and implementations are grouped" icon="rust" iconType="solid">
+
+```rust
+// Rust code grouping
+let rust_code = r#"
+use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
+    id: u32,
+    name: String,
+}
+
+impl User {
+    pub fn new(id: u32, name: String) -> Self {
+        Self { id, name }
+    }
+}
+"#;
+
+// Likely chunks:
+// 1. Use statements
+// 2. Struct definition with derives
+// 3. Implementation block
+```
+
+</Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+### Choose Appropriate Chunk Sizes
+
+```python
+# For code analysis tasks
+chunker = CodeChunker(language="python", chunk_size=1024)
+
+# For embedding generation (smaller chunks often work better)
+chunker = CodeChunker(language="python", chunk_size=2048)
+
+# No size limit (preserve all semantic units)
+chunker = CodeChunker(language="python", chunk_size=None)
+```
+
+### Language-Specific Considerations
+
+```python
+# For web development files with mixed content
+html_chunker = CodeChunker(language="html", chunk_size=800)
+
+# For documentation with code examples
+md_chunker = CodeChunker(language="markdown", chunk_size=600)
+
+# For system-level code that needs precise structure
+c_chunker = CodeChunker(language="c", chunk_size=1200)
+```
+
+## Output Format
+
+Each chunk contains detailed metadata about the code structure:
+
+```python
+chunks = chunker.chunk(code)
+for chunk in chunks:
+    print(f"Text: {chunk.text}")
+    print(f"Start: {chunk.start_index}")
+    print(f"End: {chunk.end_index}")
+    print(f"Token count: {chunk.token_count}")
+```
+
+## Limitations
+
+<Warning>
+**Current Limitations**:
+
+- **Experimental status**: APIs may change between versions
+- **Performance**: AST parsing may be slower than simple text splitting
+- **Language support**: Not all programming languages are supported yet
+- **Size flexibility**: Chunks may significantly exceed specified size limits
+- **Dependencies**: Requires tree-sitter and language packs
+</Warning>
+
+## Migration from Stable CodeChunker
+
+If migrating from the stable CodeChunker to the experimental version:
+
+```python
+# Old stable version
+from chonkie import CodeChunker
+
+# New experimental version
+from chonkie.experimental import CodeChunker
+
+# The API is similar but with enhanced capabilities
+chunker = CodeChunker(language="python", chunk_size=2048)
+```
+
+## Feedback and Support
+
+Since this is an experimental feature, your feedback is valuable:
+
+- **Report issues** on [GitHub](https://github.com/chonkie-inc/chonkie)
+- **Share use cases** to help improve the chunker
+- **Test with your code** and let us know what works well or needs improvement
+
+<Note>
+The experimental CodeChunker will eventually replace or supplement the stable CodeChunker based on community feedback and testing results.
+</Note>

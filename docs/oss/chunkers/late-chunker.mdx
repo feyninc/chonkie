@@ -1,0 +1,161 @@
+---
+title: "Late Chunker"
+description: "Split text into chunks based on a late-bound token count"
+icon: "clock"
+iconType: solid
+---
+
+The **LateChunker** implements the late chunking strategy described in the [Late Chunking](https://arxiv.org/abs/2409.04701) paper. It builds on top of the `RecursiveChunker` and uses document-level embeddings to create more semantically rich chunk representations.
+
+Instead of generating embeddings for each chunk independently, the LateChunker first encodes the entire text into a single embedding.
+It then splits the text using recursive rules and derives each chunk’s embedding by averaging relevant parts of the
+full document embedding. This allows each chunk to carry broader contextual information,
+improving retrieval performance in RAG systems.
+
+## API Reference
+
+To use the `LateChunker` via the API, check out the [API reference documentation](../../api/chunkers/late-chunker).
+
+## Installation
+
+LateChunker requires the `sentence-transformers` library to be installed, and currently only supports SentenceTransformer models.
+You can install it with:
+
+The LateChunker uses `RecursiveRules` to determine how to chunk the text.
+The rules are a list of `RecursiveLevel` objects, which define the delimiters and whitespace rules for each level of the recursive tree.
+Find more information about the rules in the [Additional Information](#additional-information) section.
+
+```bash
+pip install "chonkie[st]"
+```
+
+<Info>
+  For installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import LateChunker
+
+chunker = LateChunker(
+    embedding_model="nomic-ai/modernbert-embed-base",
+    chunk_size=2048,
+    rules=RecursiveRules(),
+    min_characters_per_chunk=24,
+)
+```
+
+You can also initialize the LateChunker using a recipe. Recipes are pre-defined rules for common chunking tasks.
+Find all available recipes on our Hugging Face Hub [here](https://huggingface.co/datasets/chonkie-ai/recipes).
+
+```python
+from chonkie import LateChunker
+
+# Initialize the late chunker to chunk Markdown
+chunker = LateChunker.from_recipe("markdown", lang="en")
+
+# Initialize the late chunker to chunk Hindi texts
+chunker = LateChunker.from_recipe(lang="hi")
+```
+
+## Parameters
+
+<ParamField path="embedding_model" type="str" default="nomic-ai/modernbert-embed-base">
+  SentenceTransformer model to use for embedding
+</ParamField>
+
+<ParamField path="chunk_size" type="int" default="2048">
+  Maximum number of tokens per chunk
+</ParamField>
+
+<ParamField path="rules" type="RecursiveRules" default="RecursiveRules()">
+  Rules to use for chunking
+</ParamField>
+
+<ParamField path="min_characters_per_chunk" type="int" default="24">
+  Minimum number of characters per sentence
+</ParamField>
+
+## Usage
+
+### Single Text Chunking
+
+```python
+text = """First paragraph about a specific topic.
+Second paragraph continuing the same topic.
+Third paragraph switching to a different topic.
+Fourth paragraph expanding on the new topic."""
+
+chunks = chunker(text)
+
+for chunk in chunks:
+    print(f"Chunk text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}")
+    print(f"Embedding shape: {chunk.embedding.shape}")
+```
+
+### Batch Chunking
+
+```python
+texts = [
+    "First document about topic A...",
+    "Second document about topic B..."
+]
+
+batch_chunks = chunker(texts)
+
+for chunk in batch_chunks:
+    print(f"Chunk text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}")
+    print(f"Embedding shape: {chunk.embedding.shape}")
+```
+
+## Return Type
+
+LateChunker returns chunks as `Chunk` objects:
+
+```python
+@dataclass
+class Chunk:
+    text: str           # The chunk text
+    start_index: int    # Starting position in original text
+    end_index: int      # Ending position in original text
+    token_count: int    # Number of tokens in chunk
+    context: Optional[Context] = None    # Optional context metadata
+    embedding: Union[list[float], "np.ndarray", None] = None  # Optional embedding vector
+```
+
+<Note>
+  As of version 1.3.0, LateChunker returns the base `Chunk` type instead of the
+  specialized `LateChunk` type. The embedding is automatically populated by the
+  LateChunker during the chunking process.
+</Note>
+
+## Additional Information
+
+LateChunker uses the `RecursiveRules` class to determine the chunking rules.
+The rules are a list of `RecursiveLevel` objects, which define the delimiters and whitespace rules for each level of the recursive tree.
+
+```python
+@dataclass
+class RecursiveRules:
+    rules: list[RecursiveLevel]
+
+@dataclass
+class RecursiveLevel:
+    delimiters: Union[None, str, list[str]]
+    whitespace: bool = False
+    include_delim: Optional[Literal["prev", "next"]]  # Whether to include the delimiter in the previous chunk or the next chunk.
+```
+
+You can pass in custom rules to the LateChunker, or use the default ones.
+Default rules are designed to be a good starting point for most documents, but you can customize them to your needs.
+
+<Info>
+  `RecursiveLevel` expects the list of custom delimiters to **not** include
+  whitespace. If whitespace as a delimiter is required, you can set the
+  `whitespace` parameter in the `RecursiveLevel` class to True. Note that if
+  `whitespace = True`, you cannot pass a list of custom delimiters.
+</Info>

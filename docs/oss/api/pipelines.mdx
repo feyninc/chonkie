@@ -1,0 +1,265 @@
+---
+title: "Pipelines"
+description: "Store and manage reusable chunking pipeline configurations"
+sidebarTitle: "Pipelines"
+icon: "pipe-section"
+---
+
+## What Are Pipelines?
+
+A pipeline is a named, reusable configuration that describes a sequence of chunking and refinement steps. Instead of passing the same configuration on every request, you define it once and reference it by ID.
+
+A pipeline step is either:
+- **`chunk`** — runs a chunker (e.g. `"semantic"`, `"token"`, `"recursive"`)
+- **`refine`** — runs a refinery (e.g. `"embeddings"`, `"overlap"`)
+
+## Create a Pipeline
+
+`POST /v1/pipelines`
+
+```bash
+curl -X POST http://localhost:8000/v1/pipelines \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "rag-chunker",
+    "description": "Semantic chunking with embeddings for RAG",
+    "steps": [
+      {
+        "type": "chunk",
+        "chunker": "semantic",
+        "config": {"chunk_size": 512, "threshold": 0.5}
+      },
+      {
+        "type": "refine",
+        "refinery": "embeddings",
+        "config": {"embedding_model": "text-embedding-3-small"}
+      }
+    ]
+  }'
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "rag-chunker",
+  "description": "Semantic chunking with embeddings for RAG",
+  "config": {
+    "steps": [
+      {"type": "chunk", "chunker": "semantic", "refinery": null, "config": {"chunk_size": 512, "threshold": 0.5}},
+      {"type": "refine", "chunker": null, "refinery": "embeddings", "config": {"embedding_model": "text-embedding-3-small"}}
+    ]
+  },
+  "created_at": "2026-02-20T10:00:00.000000",
+  "updated_at": "2026-02-20T10:00:00.000000"
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Request Parameters">
+    <ParamField body="name" type="string" required>
+      Unique pipeline name. Used as a human-readable identifier.
+    </ParamField>
+    <ParamField body="description" type="string">
+      Optional description of what this pipeline does.
+    </ParamField>
+    <ParamField body="steps" type="PipelineStep[]" required>
+      Ordered list of steps to execute. Each step has:
+      - `type`: `"chunk"` or `"refine"`
+      - `chunker`: chunker name (for `chunk` steps, e.g. `"semantic"`, `"token"`)
+      - `refinery`: refinery name (for `refine` steps, e.g. `"embeddings"`, `"overlap"`)
+      - `config`: step-specific parameters (same fields as the individual endpoints)
+    </ParamField>
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## List Pipelines
+
+`GET /v1/pipelines`
+
+```bash
+curl http://localhost:8000/v1/pipelines
+```
+
+Returns all pipelines ordered by creation date (newest first).
+
+---
+
+## Get a Pipeline
+
+`GET /v1/pipelines/{pipeline_id}`
+
+```bash
+curl http://localhost:8000/v1/pipelines/550e8400-e29b-41d4-a716-446655440000
+```
+
+---
+
+## Update a Pipeline
+
+`PUT /v1/pipelines/{pipeline_id}`
+
+You can update `name`, `description`, or `steps` independently:
+
+```bash
+curl -X PUT http://localhost:8000/v1/pipelines/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "description": "Updated description",
+    "steps": [
+      {
+        "type": "chunk",
+        "chunker": "recursive",
+        "config": {"chunk_size": 1024, "recipe": "markdown"}
+      }
+    ]
+  }'
+```
+
+---
+
+## Delete a Pipeline
+
+`DELETE /v1/pipelines/{pipeline_id}`
+
+```bash
+curl -X DELETE http://localhost:8000/v1/pipelines/550e8400-e29b-41d4-a716-446655440000
+```
+
+Returns `204 No Content` on success.
+
+---
+
+## Pipeline Examples
+
+### Basic Token Chunking
+
+```json
+{
+  "name": "token-basic",
+  "steps": [
+    {"type": "chunk", "chunker": "token", "config": {"chunk_size": 512}}
+  ]
+}
+```
+
+### Markdown Documents with Overlap
+
+```json
+{
+  "name": "markdown-with-overlap",
+  "description": "Recursive markdown chunking with overlap context",
+  "steps": [
+    {
+      "type": "chunk",
+      "chunker": "recursive",
+      "config": {"chunk_size": 512, "recipe": "markdown"}
+    },
+    {
+      "type": "refine",
+      "refinery": "overlap",
+      "config": {"context_size": 0.2, "method": "suffix"}
+    }
+  ]
+}
+```
+
+### Full RAG Pipeline
+
+```json
+{
+  "name": "full-rag",
+  "description": "Semantic chunking + overlap + embeddings",
+  "steps": [
+    {
+      "type": "chunk",
+      "chunker": "semantic",
+      "config": {"chunk_size": 512, "threshold": 0.5}
+    },
+    {
+      "type": "refine",
+      "refinery": "overlap",
+      "config": {"context_size": 0.1}
+    },
+    {
+      "type": "refine",
+      "refinery": "embeddings",
+      "config": {"embedding_model": "voyage-large-2"}
+    }
+  ]
+}
+```
+
+---
+
+## Storage
+
+Pipelines are stored in a local SQLite database (`data/chonkie.db`). The database is created automatically on first startup. When using Docker, mount `./data:/app/data` to persist the database across container restarts.
+
+---
+
+## Execute a Pipeline
+
+`POST /v1/pipelines/{pipeline_id}/execute`
+
+Runs the pipeline steps sequentially on the provided text. Each `chunk` step produces chunks; each `refine` step enriches them. Returns the final list of chunks.
+
+```bash
+curl -X POST http://localhost:8000/v1/pipelines/550e8400-e29b-41d4-a716-446655440000/execute \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Your document text goes here. It will be chunked and refined."}'
+```
+
+**Response:**
+
+```json
+[
+  {
+    "id": "chnk_abc123",
+    "text": "Your document text goes here.",
+    "start_index": 0,
+    "end_index": 29,
+    "token_count": 29,
+    "context": null,
+    "embedding": null
+  },
+  {
+    "id": "chnk_def456",
+    "text": "It will be chunked and refined.",
+    "start_index": 30,
+    "end_index": 61,
+    "token_count": 31,
+    "context": null,
+    "embedding": null
+  }
+]
+```
+
+### Batch Execution
+
+Submit a list of strings to process multiple documents in one request. The response is a list of lists — one inner list per input document.
+
+```bash
+curl -X POST http://localhost:8000/v1/pipelines/550e8400-e29b-41d4-a716-446655440000/execute \
+  -H "Content-Type: application/json" \
+  -d '{"text": ["First document.", "Second document.", "Third document."]}'
+```
+
+<AccordionGroup>
+  <Accordion title="Request Parameters">
+    <ParamField body="text" type="string | string[]" required>
+      Text or list of texts to process through the pipeline.
+    </ParamField>
+  </Accordion>
+</AccordionGroup>
+
+### Error Responses
+
+| Status | Cause |
+|---|---|
+| `404` | Pipeline ID not found |
+| `400` | Pipeline has no steps, a `refine` step appears before any `chunk` step, or a step is missing required fields |
+| `500` | A step failed at runtime (e.g. missing extra, model error) |

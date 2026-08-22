@@ -1,0 +1,159 @@
+---
+title: Choosing a Chunker
+sidebarTitle: Choosing a Chunker
+description: A guide to help you pick the right chunking strategy for your use case
+icon: "signs-post"
+iconType: "solid"
+---
+
+Not sure which chunker to use? This guide helps you pick the right one based on your use case, performance needs, and content type.
+
+## Quick Recommendations
+
+<CardGroup cols={2}>
+  <Card
+    title="Building a RAG chatbot?"
+    icon="comments"
+    href="/oss/chunkers/recursive-chunker"
+  >
+    Use **RecursiveChunker** for general-purpose document chunking, or
+    **SemanticChunker** if you need high topical coherence.
+  </Card>
+  <Card
+    title="Processing source code?"
+    icon="laptop"
+    href="/oss/chunkers/code-chunker"
+  >
+    Use **CodeChunker** — it understands AST structure and keeps
+    functions/classes intact.
+  </Card>
+  <Card
+    title="Need maximum throughput?"
+    icon="bolt"
+    href="/oss/chunkers/fast-chunker"
+  >
+    Use **FastChunker** — SIMD-accelerated, processes 100+ GB/s at the byte
+    level.
+  </Card>
+  <Card
+    title="Working with tabular data?"
+    icon="table"
+    href="/oss/chunkers/table-chunker"
+  >
+    Use **TableChunker** — preserves headers and splits by rows.
+  </Card>
+</CardGroup>
+
+## Decision Guide
+
+Ask yourself these questions in order:
+
+1. **Are you chunking source code?** → Use [CodeChunker](/oss/chunkers/code-chunker)
+2. **Are you chunking tables?** → Use [TableChunker](/oss/chunkers/table-chunker)
+3. **Is raw throughput your top priority?** → Use [FastChunker](/oss/chunkers/fast-chunker)
+4. **Do you need chunks grouped by topic?**
+   - Have an embedding model? → Use [SemanticChunker](/oss/chunkers/semantic-chunker)
+   - Don't have one? → Use [NeuralChunker](/oss/chunkers/neural-chunker)
+5. **Are simple sentence-boundary splits enough?** → Use [SentenceChunker](/oss/chunkers/sentence-chunker)
+6. **None of the above?** → Use [RecursiveChunker](/oss/chunkers/recursive-chunker) (best default)
+
+## Comparison Table
+
+| Chunker | Speed | Quality | Dependencies | Best For |
+|---------|-------|---------|--------------|----------|
+| **FastChunker** | Fastest (100+ GB/s) | Basic | None (SIMD) | High-throughput pipelines, byte-size limits |
+| **TokenChunker** | Very fast | Good | Tokenizer | Fixed-size chunks, token-based models |
+| **SentenceChunker** | Fast | Good | Tokenizer | Clean sentence boundaries, simple docs |
+| **RecursiveChunker** | Fast | Very good | Tokenizer | General-purpose, structured docs |
+| **TableChunker** | Fast | Excellent (tables) | None | Markdown/HTML tables |
+| **CodeChunker** | Moderate | Excellent (code) | Tree-sitter | Source code files |
+| **SemanticChunker** | Slower | Excellent | Embedding model | Topic-coherent chunks, RAG quality |
+| **NeuralChunker** | Slower | Excellent | BERT model | Topic segmentation without embeddings |
+| **LateChunker** | Slower | Excellent | Embedding model | Higher recall in RAG |
+| **SlumberChunker** | Slowest | S-tier | LLM (Genie) | Maximum quality, cost not a concern |
+
+## When to Use Each
+
+<Steps>
+  <Step title="You just need it to work">
+    Start with **RecursiveChunker**. It's the best general-purpose option — fast, no heavy dependencies beyond a tokenizer, handles most document types well.
+
+    ```python
+    from chonkie import RecursiveChunker
+
+    chunker = RecursiveChunker(chunk_size=512)
+    chunks = chunker.chunk(text)
+    ```
+  </Step>
+
+  <Step title="You need high-quality semantic chunks">
+    Use **SemanticChunker** if you have an embedding model available. It groups sentences by meaning, so each chunk stays on-topic.
+
+    ```python
+    from chonkie import SemanticChunker
+
+    chunker = SemanticChunker(
+        embedding_model="all-MiniLM-L6-v2",
+        chunk_size=512,
+        similarity_threshold=0.5
+    )
+    chunks = chunker.chunk(text)
+    ```
+  </Step>
+
+  <Step title="You're processing code">
+    Use **CodeChunker** — it parses the AST so your chunks respect function/class boundaries instead of cutting mid-statement.
+
+    ```python
+    from chonkie import CodeChunker
+
+    chunker = CodeChunker(language="python", chunk_size=512)
+    chunks = chunker.chunk(source_code)
+    ```
+  </Step>
+
+  <Step title="You need raw speed above all else">
+    Use **FastChunker** for pipelines where throughput matters more than chunk boundary quality. It uses SIMD instructions for 100+ GB/s processing.
+
+    ```python
+    from chonkie import FastChunker
+
+    chunker = FastChunker(chunk_size=4096)  # byte size
+    chunks = chunker.chunk(text)
+    ```
+  </Step>
+
+  <Step title="You want the absolute best quality">
+    Use **SlumberChunker** with a generative model. It's the slowest and most expensive, but produces the highest-quality chunks by using an LLM to decide boundaries.
+
+    ```python
+    from chonkie import SlumberChunker
+
+    chunker = SlumberChunker(
+        genie="openai",
+        chunk_size=512
+    )
+    chunks = chunker.chunk(text)
+    ```
+  </Step>
+</Steps>
+
+## F.A.Q.
+
+<AccordionGroup>
+  <Accordion title="Can I switch chunkers without changing my pipeline?">
+    Yes. All chunkers share the same interface (`chunk()`, `chunk_batch()`, async variants). Swap one for another and everything downstream stays the same.
+  </Accordion>
+
+  <Accordion title="Should I use SemanticChunker or NeuralChunker?">
+    **SemanticChunker** if you already have an embedding model in your pipeline (reuse it). **NeuralChunker** if you don't — it uses a small BERT model specifically trained for topic segmentation, so it doesn't require a separate embedding setup.
+  </Accordion>
+
+  <Accordion title="Is FastChunker good enough for RAG?">
+    It depends on your tolerance for imperfect boundaries. FastChunker splits on byte counts, which can cut mid-word or mid-sentence. For RAG where retrieval quality matters, prefer RecursiveChunker or SemanticChunker. Use FastChunker when you need to process terabytes quickly and can tolerate rough boundaries.
+  </Accordion>
+
+  <Accordion title="What about LateChunker?">
+    LateChunker implements the "Late Chunking" algorithm which produces embeddings with better recall for retrieval tasks. Use it when retrieval accuracy is your top priority and you can afford the extra compute.
+  </Accordion>
+</AccordionGroup>

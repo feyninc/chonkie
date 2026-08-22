@@ -1,0 +1,281 @@
+---
+title: Open Source
+sidebarTitle: Open Source
+description: The Open Source Library For RAG
+icon: "code"
+iconType: "solid"
+---
+
+<div align="center">
+  <img
+    src="/assets/logo/chonkie_xray.png"
+    alt="Chonkie Logo"
+    height={120}
+    width={200}
+    noZoom
+  />
+  _✨Look Inside! We're Open Source!✨_
+</div>
+
+<br />
+
+**Chonkie's Open Source library** provides lightweight, and high-performance features for building modern RAG applications. 
+Install it locally, run anywhere, and keep full control over your chunking pipeline.
+
+## Why Chonkie OSS?
+
+<CardGroup cols={2}>
+  <Card title="Completely Free" icon="hand-holding-heart">
+   Released under the MIT license. Use however you like.
+  </Card>
+  <Card title="Privacy First" icon="shield-check">
+    All processing happens locally. Your data never leaves your infrastructure.
+  </Card>
+  <Card title="Production Ready" icon="rocket">
+    Battle-tested algorithms used by thousands of developers. Optimized for
+    speed and reliability.
+  </Card>
+  <Card title="Lightning Fast" icon="bolt">
+    Optimized with caching, parallel processing, and fast tokenizers. Process
+    millions of chunks efficiently.
+  </Card>
+</CardGroup>
+
+## Core Capabilities
+
+### Advanced Chunkers
+
+Chonkie OSS includes a comprehensive suite of chunking algorithms, each designed for specific document types and use cases:
+
+<AccordionGroup>
+  <Accordion title="TokenChunker" icon="scissors">
+    **Best for**: General-purpose chunking, most use cases
+
+    Splits text into fixed-size token chunks with configurable overlap. The most straightforward and reliable chunking strategy.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="SentenceChunker" icon="align-left">
+    **Best for**: Q&A systems, maintaining complete thoughts
+
+    Chunks at sentence boundaries while respecting token limits. Ensures sentences are never split mid-thought.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="RecursiveChunker" icon="chart-tree-map">
+    **Best for**: Markdown, structured documents, hierarchical content
+
+    Hierarchically chunks using multiple delimiters—paragraphs, then sentences, then words. Preserves document structure naturally.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="FastChunker" icon="bolt">
+    **Best for**: High-throughput pipelines, large-scale document processing
+
+    SIMD-accelerated chunking with 100+ GB/s throughput. Uses byte-size limits for extreme performance without tokenization overhead.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="TableChunker" icon="table-cells">
+    **Best for**: Markdown tables, tabular data
+
+    Splits large tables into manageable chunks by rows while preserving headers. Perfect for data-heavy documents.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="SemanticChunker" icon="magnet">
+    **Best for**: Multi-topic documents, maintaining topical coherence
+
+    Uses embeddings to identify natural topic boundaries. Creates chunks based on semantic similarity, not just structure. Includes Savitzky-Golay filtering and skip-window merging for advanced boundary detection.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="LateChunker" icon="clock">
+    **Best for**: Retrieval optimization, higher recall RAG systems
+
+    Implements the Late Chunking algorithm from research. Generates document-level embeddings first, then derives chunk embeddings for richer contextual representation.
+
+    Available in: Python
+  </Accordion>
+
+  <Accordion title="CodeChunker" icon="laptop">
+    **Best for**: Source code, API documentation, technical content
+
+    Language-aware chunking using Abstract Syntax Trees (AST). Preserves function and class boundaries for better code understanding.
+
+    Available in: Python, JavaScript
+  </Accordion>
+
+  <Accordion title="NeuralChunker" icon="brain">
+    **Best for**: Maximum quality, complex documents with subtle topic shifts
+
+    Uses a fine-tuned BERT model to detect semantic shifts in text. ML-powered boundary detection for topic-coherent chunks.
+
+    Available in: Python
+  </Accordion>
+
+  <Accordion title="SlumberChunker" icon="wand-magic-sparkles">
+    **Best for**: Books, research papers, when quality matters most
+
+    Agentic chunking powered by LLMs via the Genie interface. Uses generative models (Gemini, OpenAI, etc.) to intelligently determine optimal chunk boundaries.
+
+    Available in: Python
+  </Accordion>
+</AccordionGroup>
+
+### Embedding Providers
+
+Flexible embedding support for semantic chunking and refineries:
+
+- **AutoEmbeddings** - Automatically select the best embeddings for your use case
+- **Model2VecEmbeddings** - Ultra-fast static embeddings (default for semantic chunking)
+- **SentenceTransformerEmbeddings** - Hugging Face Sentence Transformers models
+- **OpenAIEmbeddings** - OpenAI's text-embedding models
+- **AzureOpenAIEmbeddings** - Azure-hosted OpenAI embeddings
+- **CohereEmbeddings** - Cohere's embedding models
+- **JinaEmbeddings** - Jina AI embeddings
+- **GeminiEmbeddings** - Google Gemini embeddings
+- **VoyageAIEmbeddings** - Voyage AI embeddings
+- **Custom Embeddings** - Bring your own embedding model
+
+All embeddings follow a consistent interface and can be swapped seamlessly.
+
+### Refineries
+
+Enhance your chunks with additional context and embeddings:
+
+<CardGroup cols={2}>
+  <Card title="OverlapRefinery" icon="layer-group">
+    Adds contextual overlap between chunks to prevent information loss at boundaries. Configurable overlap sizes for optimal retrieval.
+  </Card>
+  <Card title="EmbeddingsRefinery" icon="sparkles">
+    Generates and attaches vector embeddings to your chunks. Supports all major embedding providers with automatic dimension detection.
+  </Card>
+</CardGroup>
+
+### Database Handshakes
+
+Seamlessly connect Chonkie to your favorite database:
+
+<CardGroup cols={2}>
+  <Card title="ChromaDB" icon="database">
+    Ephemeral or persistent ChromaDB instances
+  </Card>
+  <Card title="Qdrant" icon="database">
+    High-performance vector search with Qdrant
+  </Card>
+  <Card title="Weaviate" icon="database">
+    Knowledge graph + vector search with Weaviate
+  </Card>
+  <Card title="Turbopuffer" icon="database">
+    Serverless vector database by Turbopuffer
+  </Card>
+  <Card title="Pinecone" icon="database">
+    Managed vector database with Pinecone
+  </Card>
+  <Card title="pgvector" icon="database">
+    PostgreSQL with pgvector extension
+  </Card>
+  <Card title="MongoDB" icon="database">
+    MongoDB Atlas Vector Search
+  </Card>
+  <Card title="Elastic" icon="database">
+    Elasticsearch vector search
+  </Card>
+</CardGroup>
+
+Each handshake provides a simple interface to embed chunks and write them directly to your database.
+
+### Chefs
+
+Chefs automatically prepare raw data for chunking:
+
+- **TableChef** - Extracts tables from markdown text
+- **TextChef** - Processes plain text files into structured Documents
+- **MarkdownChef** - Parses markdown with tables, code blocks, and images
+
+### Porters
+
+Export chunks to common formats:
+
+- **JSONPorter** - Export chunks to JSON for storage or processing
+- **DatasetsPorter** - Export to Hugging Face Datasets format
+
+### Utils
+
+- **Visualizer** - Rich text visualization of chunks with color-coded boundaries
+- **Hubbie** - Hugging Face Hub integration for sharing and loading chunkers
+
+## Language Support
+
+<Tabs>
+  <Tab title="Python">
+    **Full Feature Set**
+
+    All chunkers, embedding providers, refineries, handshakes, chefs, and porters available. Choose from minimal to full installations based on your needs.
+
+    - Default install: Token, Sentence, Recursive, Table chunkers
+    - Semantic install: + SemanticChunker, LateChunker, NeuralChunker with Model2Vec
+    - All install: Every feature available
+  </Tab>
+  <Tab title="JavaScript/TypeScript">
+    **Core Chunking**
+
+    JavaScript support includes the most commonly used chunkers:
+    - TokenChunker
+    - SentenceChunker
+    - RecursiveChunker
+    - FastChunker
+    - TableChunker
+    - SemanticChunker
+    - CodeChunker
+
+    Available via `@chonkiejs/core` package with full TypeScript support. Other chunkers available through the Chonkie Cloud API via `@chonkiejs/cloud`.
+
+    <Info> To use custom tokenizers with the chunkers, install `@chonkiejs/token` </Info>
+  </Tab>
+</Tabs>
+
+## Performance Characteristics
+
+Chonkie OSS is optimized for speed:
+
+- **Pipelining** - Efficient multi-stage processing
+- **Caching** - Smart caching to avoid recomputation
+- **Fast Tokenizers** - TikToken and AutoTikTokenizer for speed
+- **Parallel Processing** - Multi-threaded batch operations
+- **Ultra-fast Embeddings** - Model2Vec static embeddings (default)
+- **Token Estimate-Validate** - Efficient feedback loops for optimal chunk sizes
+
+Process thousands of documents per second on commodity hardware.
+
+## Next Steps
+
+Ready to get started with Chonkie OSS?
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/oss/quick-start">
+    Install and create your first chunk in under 2 minutes
+  </Card>
+  <Card title="Installation Guide" icon="download" href="/oss/installation">
+    Detailed installation options for all features
+  </Card>
+  <Card title="Chunkers Overview" icon="scissors" href="/oss/chunkers/overview">
+    Explore all chunking algorithms in detail
+  </Card>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/chonkie-inc/chonkie">
+    Star the repo and contribute to the project
+  </Card>
+</CardGroup>
+
+---
+
+<Info>
+  Need hosted chunking with zero setup? Check out our [Chunking API](/oss/api/overview) for a managed solution.
+</Info>

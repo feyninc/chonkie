@@ -1,0 +1,108 @@
+---
+title: TextChef
+sidebarTitle: TextChef
+icon: file
+iconType: solid
+description: Process plain text files into Document objects.
+---
+
+The `TextChef` processes plain text files and returns structured `Document` objects for further processing.
+
+## Installation
+
+TextChef is included in the base installation of Chonkie. No additional dependencies are required.
+
+<Info>
+  For installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import TextChef
+
+# Simple initialization - no parameters required
+chef = TextChef()
+```
+
+## Methods
+
+### process()
+
+Process a text file and return a `Document` object.
+
+#### Parameters
+
+<ParamField path="path" type="Union[str, Path]" required>
+  Path to the text file (string or Path object)
+</ParamField>
+
+#### Returns
+
+`Document` object containing the file content
+
+### process_batch()
+
+Process multiple text files at once.
+
+#### Parameters
+
+<ParamField path="paths" type="list[Union[str, Path]]" required>
+  List of file paths to process
+</ParamField>
+
+#### Returns
+
+`list[Document]` where each `Document` contains a file's contents.
+
+## Usage
+
+```python
+from chonkie import TextChef
+
+# Initialize the chef
+chef = TextChef()
+
+# Process a text file
+doc = chef.process("example.txt")
+
+# Access the content
+print(doc.content)
+print(f"Document ID: {doc.id}")
+```
+
+## Integration with Chunkers
+
+TextChef is designed to work seamlessly with Chonkie's chunkers:
+
+```python
+from chonkie import TextChef, TokenChunker
+
+# Step 1: Load text file
+chef = TextChef()
+doc = chef.process("article.txt")
+
+# Step 2: Chunk the content
+chunker = TokenChunker(chunk_size=512, chunk_overlap=50)
+chunks = chunker.chunk(doc.content)
+
+# Step 3: Store chunks back in the document
+doc.chunks = chunks
+
+# Now your document has both content and chunks
+print(f"Document {doc.id}:")
+print(f"  Content: {len(doc.content)} characters")
+print(f"  Chunks: {len(doc.chunks)}")
+```
+
+## Encoding
+
+TextChef reads files with UTF-8 encoding by default, ensuring proper handling of:
+
+- Unicode characters
+- International text
+- Special symbols
+- Emoji and other non-ASCII characters
+
+All text is read as strings and preserved exactly as it appears in the source file.

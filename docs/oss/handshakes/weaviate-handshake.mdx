@@ -1,0 +1,213 @@
+---
+title: Weaviate Handshake
+sidebarTitle: Weaviate Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a Weaviate collection.
+---
+
+The `WeaviateHandshake` class provides seamless integration between Chonkie's chunking system and [Weaviate](https://weaviate.io/), a powerful vector database.
+
+Embed and store your Chonkie chunks in Weaviate without ever leaving the Chonkie SDK.
+
+## Installation
+
+Before using the Weaviate handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[weaviate]
+```
+
+## Basic Usage
+
+### Initialization
+<CodeGroup>
+
+```python Initialize using chonkie
+from chonkie import WeaviateHandshake
+
+# Initialize with default settings (local Weaviate)
+handshake = WeaviateHandshake()
+
+# Or connect to a Weaviate server
+handshake = WeaviateHandshake(url="http://localhost:8080", api_key= "YOUR_API_KEY")
+```
+
+```python initialize using the client
+import weaviate
+from chonkie import WeaviateHandshake
+
+client = weaviate.connect_to_local()
+handshake = WeaviateHandshake(client=client, collection_name="my_collection")
+```
+
+```python weaviate cloud initialization
+from chonkie import WeaviateHandshake
+
+handshake = WeaviateHandshake(
+    url="YOUR_CLOUD_URL",
+    api_key="YOUR_API_KEY"
+)
+```
+</CodeGroup>
+
+## Parameters
+
+<ParamField
+	path="client"
+	type="Optional[weaviate.Client]"
+	default="None"
+>
+	Weaviate client instance. If not provided, a new client will be created based on other parameters.
+</ParamField>
+
+<ParamField
+	path="collection_name"
+	type="Union[str, Literal['random']]"
+	default="random"
+>
+	Name of the collection to use. If "random", a unique name will be generated.
+</ParamField>
+
+<ParamField
+	path="embedding_model"
+	type="Union[str, BaseEmbeddings]"
+	default="minishlab/potion-retrieval-32M"
+>
+	Embedding model to use. Can be a model name or a BaseEmbeddings instance.
+</ParamField>
+
+<ParamField
+	path="url"
+	type="Optional[str]"
+	default="None"
+>
+	URL of the Weaviate server. If provided, will connect to this server.
+</ParamField>
+
+<ParamField
+	path="api_key"
+	type="Optional[str]"
+	default="None"
+>
+	API key for Weaviate Cloud authentication.
+</ParamField>
+
+<ParamField
+	path="auth_config"
+	type="Optional[dict[str, Any]]"
+	default="None"
+>
+	OAuth configuration for authentication (optional).
+</ParamField>
+
+<ParamField
+	path="batch_size"
+	type="int"
+	default="100"
+>
+	Batch size for batch operations.
+</ParamField>
+
+<ParamField
+	path="batch_dynamic"
+	type="bool"
+	default="True"
+>
+	Whether to use dynamic batching.
+</ParamField>
+
+<ParamField
+	path="batch_timeout_retries"
+	type="int"
+	default="3"
+>
+	Number of retries for batch timeouts.
+</ParamField>
+
+<ParamField
+	path="additional_headers"
+	type="Optional[dict[str, str]]"
+	default="None"
+>
+	Additional headers for the Weaviate client.
+</ParamField>
+
+
+## Writing Chunks to Weaviate
+
+```python
+from chonkie import WeaviateHandshake, SemanticChunker    
+
+# Initialize the handshake
+handshake = WeaviateHandshake(
+    url="YOUR_CLOUD_URL",
+    api_key="YOUR_API_KEY",
+    collection_name="my_documents"
+)
+
+# Create some chunks
+chunker = SemanticChunker()
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Write chunks to Weaviate
+handshake.write(chunks)
+```
+
+### Searching Chunks in Weaviate
+
+You can retrieve the most similar chunks from your Weaviate collection using the `search` method:
+<CodeGroup>
+```python search using a query
+from chonkie import WeaviateHandshake
+
+# Initialize the handshake
+handshake = WeaviateHandshake(
+    url="YOUR_CLOUD_URL",
+    api_key="YOUR_API_KEY",
+    collection_name="my_documents"
+)
+results = handshake.search(query="chonk your texts", limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using embedding
+from chonkie import WeaviateHandshake
+
+# Initialize the handshake
+handshake = WeaviateHandshake(
+    url="YOUR_CLOUD_URL",
+    api_key="YOUR_API_KEY",
+    collection_name="my_documents"
+)
+embedding = handshake.embedding_model.embed("chonk your texts").tolist()
+results = handshake.search(embedding=embedding, limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using chonkie chunks
+from chonkie import WeaviateHandshake, SemanticChunker
+
+# Initialize the handshake
+handshake = WeaviateHandshake(
+    url="YOUR_CLOUD_URL",
+    api_key="YOUR_API_KEY",
+    collection_name="my_documents"
+)
+
+# Create some chunks
+chunker = SemanticChunker(embedding_model=handshake.embedding_model)
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Search the handshake
+results = handshake.search(
+    embedding=chunks[0].sentences[0].embedding, 
+    limit=2,
+)
+for result in results:
+    print(result["score"], result["text"])
+```
+</CodeGroup>
+

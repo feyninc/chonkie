@@ -1,0 +1,34 @@
+---
+title: CohereEmbeddings
+sidebarTitle: CohereEmbeddings
+description: Embed text using Cohere embeddings
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `CohereEmbeddings` class, which is a wrapper around the Cohere API.
+
+## Installation
+
+Embeddings require the `cohere` library. See the [Installation Guide](/oss/installation) for more information.
+
+## Usage
+
+```python
+from chonkie import CohereEmbeddings
+
+# Initialize Cohere embeddings
+embeddings = CohereEmbeddings()
+
+# Specify model and API key
+embeddings = CohereEmbeddings(model="embed-english-light-v3.0", api_key="YOUR_API_KEY")
+```
+
+## Example
+
+```python
+embeddings = CohereEmbeddings()
+vectors = embeddings.embed("your text here")
+# Or you can
+vectors = embeddings.embed_batch(["text1", "text2"])
+```

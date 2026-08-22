@@ -1,0 +1,64 @@
+---
+title: Fetchers Overview
+sidebarTitle: Overview
+description: Overview of the different fetchers available in Chonkie
+icon: "download"
+iconType: "solid"
+---
+
+Fetchers connect different data sources to Chonkie's pipeline system, enabling seamless data ingestion from various sources.
+
+## What are Fetchers?
+
+Fetchers are the first step in the CHOMP pipeline (CHef -> CHunker -> Refinery -> Porter/Handshake). They retrieve data from different sources and pass it to the next pipeline stage for processing. Fetchers make it easy to:
+
+- Load files from local storage
+- Fetch documents from cloud storage (coming soon)
+- Retrieve data from databases (coming soon)
+- Connect to APIs and web sources (coming soon)
+
+## Installation
+
+Fetchers are included with the base Chonkie installation:
+
+```bash
+pip install chonkie
+```
+
+## Using Fetchers in Pipelines
+
+Fetchers integrate seamlessly with the Pipeline API:
+
+```python
+from chonkie.pipeline import Pipeline
+
+# Single file
+doc = (Pipeline()
+    .fetch_from("file", path="document.txt")
+    .process_with("text")
+    .chunk_with("recursive", chunk_size=512)
+    .run())
+
+# Directory with multiple files
+docs = (Pipeline()
+    .fetch_from("file", dir="./docs", ext=[".txt", ".md"])
+    .process_with("text")
+    .chunk_with("recursive", chunk_size=512)
+    .run())
+```
+
+## Available Fetchers
+
+<CardGroup cols={2}>
+  <Card
+    title="FileFetcher"
+    icon="file"
+    href="/oss/fetchers/file-fetcher"
+  >
+    Fetch files from local filesystem - single files or entire directories.
+  </Card>
+</CardGroup>
+
+<Info>
+  More fetchers are coming soon! We're working on cloud storage, database, and API fetchers.
+</Info>

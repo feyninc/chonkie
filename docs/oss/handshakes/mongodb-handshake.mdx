@@ -1,0 +1,208 @@
+---
+title: MongoDB Handshake
+sidebarTitle: MongoDB Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a MongoDB collection.
+---
+
+The `MongoDBHandshake` class provides integration between Chonkie's chunking system and MongoDB, a popular NoSQL database.
+
+Embed and store your Chonkie chunks in MongoDB directly from the Chonkie SDK.
+
+## Installation
+
+Before using the MongoDB handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[mongodb]
+```
+
+## Initialization
+<CodeGroup>
+```python Initialize using chonkie
+from chonkie import MongoDBHandshake
+
+# Initialize with default settings (auto-generated database/collection)
+handshake = MongoDBHandshake(uri="mongodb://localhost:27017")
+```
+
+```python initialize using the client
+import pymongo
+client = pymongo.MongoClient("mongodb://localhost:27017")
+handshake = MongoDBHandshake(
+    client=client, 
+    db_name="my_db", 
+    collection_name="my_collection"
+)
+```
+
+```python specify connection and embedding
+handshake = MongoDBHandshake(
+    uri="mongodb://localhost:27017",
+    db_name="my_db",
+    collection_name="my_collection",
+    embedding_model="minishlab/potion-retrieval-32M"
+)
+```
+</CodeGroup>
+
+### Parameters
+
+<ParamField
+    path="client"
+    type="Optional[pymongo.MongoClient]"
+    default="None"
+>
+    MongoDB client instance. If not provided, a new client will be created based on other parameters.
+</ParamField>
+
+<ParamField
+    path="uri"
+    type="Optional[str]"
+    default="None"
+>
+    MongoDB connection URI.
+</ParamField>
+
+<ParamField
+    path="username"
+    type="Optional[str]"
+    default="None"
+>
+    MongoDB username for authentication.
+</ParamField>
+
+<ParamField
+    path="password"
+    type="Optional[str]"
+    default="None"
+>
+    MongoDB password for authentication.
+</ParamField>
+
+<ParamField
+    path="hostname"
+    type="Optional[str]"
+    default="None"
+>
+    MongoDB host address.
+</ParamField>
+
+<ParamField
+    path="port"
+    type="Optional[Union[int, str]]"
+    default="None"
+>
+    MongoDB port number.
+</ParamField>
+
+<ParamField
+    path="db_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the database to use. If "random", a unique name will be generated.
+</ParamField>
+
+<ParamField
+    path="collection_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the collection to use. If "random", a unique name will be generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use. Can be a model name or a BaseEmbeddings instance.
+</ParamField>
+
+<ParamField
+    path="**kwargs"
+    type="dict[str, Any]"
+    default="{}"
+>
+    Additional keyword arguments to pass to the MongoDB client or collection creation.
+</ParamField>
+
+## Writing Chunks to MongoDB
+
+```python
+from chonkie import MongoDBHandshake, SemanticChunker    
+
+# Initialize the handshake
+handshake = MongoDBHandshake(
+    uri="mongodb://localhost:27017",
+    db_name="my_documents",
+    collection_name="my_collection"
+)
+
+# Create some chunks
+chunker = SemanticChunker()
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Write chunks to MongoDB
+handshake.write(chunks)
+```
+
+## Searching Chunks in MongoDB
+
+You can retrieve the most similar chunks from your MongoDB collection using the `search` method:
+<CodeGroup>
+```python search using a query
+from chonkie import MongoDBHandshake
+
+# Initialize the handshake
+handshake = MongoDBHandshake(
+    uri="mongodb://localhost:27017",
+    db_name="my_documents",
+    collection_name="my_collection"
+)
+results = handshake.search(query="chonk your texts", limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using embedding
+from chonkie import MongoDBHandshake
+
+# Initialize the handshake
+handshake = MongoDBHandshake(
+    uri="mongodb://localhost:27017",
+    db_name="my_documents",
+    collection_name="my_collection"
+)
+embedding = handshake.embedding_model.embed("chonk your texts").tolist()
+results = handshake.search(embedding=embedding, limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using chonkie chunks
+from chonkie import MongoDBHandshake, SemanticChunker
+
+# Initialize the handshake
+handshake = MongoDBHandshake(
+    uri="mongodb://localhost:27017",
+    db_name="my_documents",
+    collection_name="my_collection"
+)
+
+# Create some chunks
+chunker = SemanticChunker(embedding_model=handshake.embedding_model)
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Search the handshake
+results = handshake.search(
+    embedding=chunks[0].sentences[0].embedding, 
+    limit=2,
+)
+for result in results:
+    print(result["score"], result["text"])
+```
+</CodeGroup>
+

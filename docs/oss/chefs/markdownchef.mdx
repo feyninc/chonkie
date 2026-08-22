@@ -1,0 +1,133 @@
+---
+title: MarkdownChef
+sidebarTitle: MarkdownChef
+icon: markdown
+iconType: solid
+description: Process markdown files, extracting tables, code blocks, and images.
+---
+
+The `MarkdownChef` processes markdown files and strings, extracting tables, code blocks, and images into a structured `MarkdownDocument`.
+It intelligently parses markdown content and separates it into distinct components while preserving their positions in the original text.
+
+## Installation
+
+MarkdownChef is included in the base installation of Chonkie. No additional dependencies are required.
+
+<Info>
+  For installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import MarkdownChef
+
+# Basic initialization with default tokenizer
+chef = MarkdownChef()
+
+# Initialize with a specific tokenizer
+chef = MarkdownChef(tokenizer="gpt2")
+
+# Or use a custom tokenizer instance
+from transformers import AutoTokenizer
+custom_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+chef = MarkdownChef(tokenizer=custom_tokenizer)
+```
+
+## Parameters
+
+<ParamField
+  path="tokenizer"
+  type="Union[TokenizerProtocol, str]"
+  default="character"
+>
+  Tokenizer to use for counting tokens in text chunks. Can be a string
+  identifier ("character", "gpt2", etc.) or a tokenizer instance that follows
+  the TokenizerProtocol.
+</ParamField>
+
+## Methods
+
+### process()
+
+Process a markdown file.
+
+#### Parameters
+
+<ParamField path="path" type="Union[str, Path]" required>
+  Path to the markdown file (string or Path object)
+</ParamField>
+
+#### Returns
+
+`MarkdownDocument` containing parsed content with extracted tables, code, images, and text chunks
+
+### process_batch()
+
+Process multiple markdown files at once.
+
+#### Parameters
+
+<ParamField path="paths" type="list[Union[str, Path]]" required>
+  List of file paths to process
+</ParamField>
+
+#### Returns
+
+List of `MarkdownDocument` objects
+
+## Basic Usage
+
+```python
+from chonkie import MarkdownChef
+
+# Initialize the chef
+chef = MarkdownChef()
+
+# Process a markdown file
+doc = chef.process("example.md")
+
+# Access the extracted components
+print(f"Found {len(doc.tables)} tables")
+print(f"Found {len(doc.code)} code blocks")
+print(f"Found {len(doc.images)} images")
+print(f"Found {len(doc.chunks)} text chunks")
+```
+
+## Return Type
+
+MarkdownChef returns a `MarkdownDocument` object, which extends the base `Document` class with additional fields:
+
+```python
+@dataclass
+class MarkdownTable:
+    content: str          # The table content
+    start_index: int      # Starting position in original text
+    end_index: int        # Ending position in original text
+
+@dataclass
+class MarkdownCode:
+    content: str              # The code content
+    language: Optional[str]   # Programming language (if specified)
+    start_index: int          # Starting position in original text
+    end_index: int            # Ending position in original text
+
+@dataclass
+class MarkdownImage:
+    alias: str                # Alt text or filename
+    content: str              # Image path or data URL
+    start_index: int          # Starting position in original text
+    end_index: int            # Ending position in original text
+    link: Optional[str]       # Link URL (if image is clickable)
+
+@dataclass
+class MarkdownDocument(Document):
+    id: str                         # Unique document ID
+    content: str                    # Full markdown content
+    tables: list[MarkdownTable]     # Extracted tables
+    code: list[MarkdownCode]        # Extracted code blocks
+    images: list[MarkdownImage]     # Extracted images
+    chunks: list[Chunk]             # Remaining text chunks
+    metadata: dict[str, Any]        # Additional metadata
+```
