@@ -1,6 +1,6 @@
 <div align='center'>
 
-![Chonkie Logo](https://github.com/chonkie-inc/chonkie/blob/main/assets/chonkie_logo_br_transparent_bg.png?raw=true)
+![Chonkie Logo](./assets/chonkie-logo-thicc.png)
 
 # 🦛 Chonkie ✨
 
@@ -177,19 +177,19 @@ Interactive documentation is available at `/docs` when the server is running.
 
 Chonkie provides several chunkers to help you split your text efficiently for RAG applications. Here's a quick overview of the available chunkers:
 
-| Name               | Alias       | Description                                                                                                                |
-| ------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `TokenChunker`     | `token`     | Splits text into fixed-size token chunks.                                                                                  |
-| `FastChunker`      | `fast`      | SIMD-accelerated byte-based chunking at 100+ GB/s. Included in the default install.                                        |
-| `SentenceChunker`  | `sentence`  | Splits text into chunks based on sentences.                                                                                |
-| `RecursiveChunker` | `recursive` | Splits text hierarchically using customizable rules to create semantically meaningful chunks.                              |
-| `SemanticChunker`  | `semantic`  | Splits text into chunks based on semantic similarity. Inspired by the work of [Greg Kamradt](https://github.com/gkamradt). |
-| `LateChunker`      | `late`      | Embeds text and then splits it to have better chunk embeddings.                                                            |
-| `CodeChunker`      | `code`      | Splits code into structurally meaningful chunks.                                                                           |
-| `NeuralChunker`    | `neural`    | Splits text using a neural model.                                                                                          |
-| `SlumberChunker`   | `slumber`   | Splits text using an LLM to find semantically meaningful chunks. Also known as _"AgenticChunker"_.                         |
-| `TableChunker`     | `table`     | Chunks markdown tables by rows or character count.                                                                          |
-| `TeraflopAIChunker`| `teraflopai`| Splits text using the TeraflopAI Segmentation API for domain-specific segmentation.                                        |
+| Name                | Alias        | Description                                                                                                                |
+| ------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `TokenChunker`      | `token`      | Splits text into fixed-size token chunks.                                                                                  |
+| `FastChunker`       | `fast`       | SIMD-accelerated byte-based chunking at 100+ GB/s. Included in the default install.                                        |
+| `SentenceChunker`   | `sentence`   | Splits text into chunks based on sentences.                                                                                |
+| `RecursiveChunker`  | `recursive`  | Splits text hierarchically using customizable rules to create semantically meaningful chunks.                              |
+| `SemanticChunker`   | `semantic`   | Splits text into chunks based on semantic similarity. Inspired by the work of [Greg Kamradt](https://github.com/gkamradt). |
+| `LateChunker`       | `late`       | Embeds text and then splits it to have better chunk embeddings.                                                            |
+| `CodeChunker`       | `code`       | Splits code into structurally meaningful chunks.                                                                           |
+| `NeuralChunker`     | `neural`     | Splits text using a neural model.                                                                                          |
+| `SlumberChunker`    | `slumber`    | Splits text using an LLM to find semantically meaningful chunks. Also known as _"AgenticChunker"_.                         |
+| `TableChunker`      | `table`      | Chunks markdown tables by rows or character count.                                                                         |
+| `TeraflopAIChunker` | `teraflopai` | Splits text using the TeraflopAI Segmentation API for domain-specific segmentation.                                        |
 
 More on these methods and the approaches taken inside the [docs](https://docs.chonkie.ai)
 
@@ -202,13 +202,13 @@ Chonkie boasts 45+ integrations across tokenizers, embedding providers, LLMs, re
 
 Chefs handle text preprocessing, while Fetchers load data from various sources.
 
-| Component | Class          | Description                                        | Optional Install  |
-| --------- | -------------- | -------------------------------------------------- | ----------------- |
-| `chef`    | `TextChef`     | Text preprocessing and cleaning.                   | `default`         |
-| `chef`    | `MarkdownChef` | Parse markdown into structured MarkdownDocuments.   | `default`         |
-| `chef`    | `TableChef`    | Process CSV/Excel files into MarkdownDocuments.     | `chonkie[table]`  |
+| Component | Class          | Description                                        | Optional Install   |
+| --------- | -------------- | -------------------------------------------------- | ------------------ |
+| `chef`    | `TextChef`     | Text preprocessing and cleaning.                   | `default`          |
+| `chef`    | `MarkdownChef` | Parse markdown into structured MarkdownDocuments.  | `default`          |
+| `chef`    | `TableChef`    | Process CSV/Excel files into MarkdownDocuments.    | `chonkie[table]`   |
 | `chef`    | `MistralOCR`   | Extract text from images/PDFs via Mistral OCR API. | `chonkie[mistral]` |
-| `fetcher` | `FileFetcher`  | Load text from files and directories.              | `default`         |
+| `fetcher` | `FileFetcher`  | Load text from files and directories.              | `default`          |
 
 </details>
 <details>
@@ -314,13 +314,13 @@ Seamlessly works with various embedding model providers. Bring your favorite emb
 
 Genies provide interfaces to interact with Large Language Models (LLMs) for advanced chunking strategies or other tasks within the pipeline.
 
-| Genie Name     | Class              | Description                                | Optional Install        |
-| -------------- | ------------------ | ------------------------------------------ | ----------------------- |
-| `gemini`       | `GeminiGenie`      | Interact with Google Gemini APIs.          | `chonkie[gemini]`       |
-| `openai`       | `OpenAIGenie`      | Interact with OpenAI APIs.                 | `chonkie[openai]`       |
-| `azure-openai` | `AzureOpenAIGenie` | Interact with Azure OpenAI APIs.           | `chonkie[azure-openai]` |
-| `groq`         | `GroqGenie`        | Fast inference on Groq hardware.           | `chonkie[groq]`         |
-| `cerebras`     | `CerebrasGenie`    | Fastest inference on Cerebras hardware.    | `chonkie[cerebras]`     |
+| Genie Name     | Class              | Description                             | Optional Install        |
+| -------------- | ------------------ | --------------------------------------- | ----------------------- |
+| `gemini`       | `GeminiGenie`      | Interact with Google Gemini APIs.       | `chonkie[gemini]`       |
+| `openai`       | `OpenAIGenie`      | Interact with OpenAI APIs.              | `chonkie[openai]`       |
+| `azure-openai` | `AzureOpenAIGenie` | Interact with Azure OpenAI APIs.        | `chonkie[azure-openai]` |
+| `groq`         | `GroqGenie`        | Fast inference on Groq hardware.        | `chonkie[groq]`         |
+| `cerebras`     | `CerebrasGenie`    | Fastest inference on Cerebras hardware. | `chonkie[cerebras]`     |
 
 You can also use the `OpenAIGenie` to interact with any LLM provider that supports the OpenAI API format, by simply changing the `model`, `base_url`, and `api_key` parameters. For example, here's how to use the `OpenAIGenie` to interact with the `Llama-4-Maverick` model via OpenRouter:
 
