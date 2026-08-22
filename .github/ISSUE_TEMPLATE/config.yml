@@ -1,8 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: Documentation
-    url: https://docs.chonkie.ai
-    about: Please consult the documentation before creating an issue.
-  - name: Community
-    url: https://discord.gg/rYYp6DC4cv
-    about: Join our Discord community to ask questions and collaborate.
