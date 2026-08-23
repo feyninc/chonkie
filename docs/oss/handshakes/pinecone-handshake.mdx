@@ -1,0 +1,151 @@
+---
+title: Pinecone Handshake
+sidebarTitle: Pinecone Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a Pinecone index.
+---
+
+The `PineconeHandshake` class provides seamless integration between Chonkie's chunking system and Pinecone, a managed vector database. 
+
+Embed and store your Chonkie chunks in Pinecone directly from the Chonkie SDK.
+
+## Installation
+
+Before using the Pinecone handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[pinecone]
+```
+
+## Initialization
+<CodeGroup>
+```python Initialize using chonkie
+from chonkie import PineconeHandshake
+handshake = PineconeHandshake(api_key="YOUR_API_KEY")
+```
+
+```python initialize using the client
+import pinecone
+client = pinecone.Pinecone(api_key="YOUR_API_KEY")
+handshake = PineconeHandshake(client=client, index_name="my_index")
+```
+
+```python specify embedding model
+handshake = PineconeHandshake(
+    api_key="YOUR_API_KEY",
+    index_name="my_index",
+    embedding_model="minishlab/potion-retrieval-32M",
+)
+```
+</CodeGroup>
+### Parameters
+
+<ParamField
+    path="client"
+    type="Optional[pinecone.Pinecone]"
+    default="None"
+>
+    Pinecone client instance. If not provided, a new client will be created based on other parameters.
+</ParamField>
+<ParamField
+    path="api_key"
+    type="Optional[str]"
+    default="None"
+>
+    Pinecone API key for authentication.
+</ParamField>
+
+<ParamField
+    path="index_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the index to use. If "random", a unique name will be generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use. Can be a model name or a BaseEmbeddings instance.
+</ParamField>
+
+<ParamField
+    path="dimension"
+    type="Optional[int]"
+    default="None"
+>
+    Dimension of the embeddings. If not provided, will be inferred from the embedding model.
+</ParamField>
+
+<ParamField
+    path="**kwargs"
+    type="dict[str, Any]"
+    default="{}"
+>
+    Additional keyword arguments to pass to the Pinecone client or index creation.
+</ParamField>
+
+
+## Writing Chunks to Pinecone
+```python
+from chonkie import PineconeHandshake, SemanticChunker    
+
+# Initialize the handshake
+handshake = PineconeHandshake(api_key="YOUR_API_KEY", index_name="my_documents")
+
+# Create some chunks
+chunker = SemanticChunker()
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Write chunks to Pinecone
+handshake.write(chunks)
+```
+
+## Searching Chunks in Pinecone
+
+You can retrieve the most similar chunks from your Pinecone index using the `search` method:
+<CodeGroup>
+```python search using a query
+from chonkie import PineconeHandshake
+
+# Initialize the handshake
+handshake = PineconeHandshake(api_key="YOUR_API_KEY", index_name="my_documents")
+results = handshake.search(query="chonk your texts", limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using embedding
+from chonkie import PineconeHandshake
+
+# Initialize the handshake
+handshake = PineconeHandshake(api_key="YOUR_API_KEY", index_name="my_documents")
+embedding = handshake.embedding_model.embed("chonk your texts").tolist()
+results = handshake.search(embedding=embedding, limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using chonkie chunks
+from chonkie import PineconeHandshake, SemanticChunker
+
+# Initialize the handshake
+handshake = PineconeHandshake(api_key="YOUR_API_KEY", index_name="my_documents")
+
+# Create some chunks
+chunker = SemanticChunker(embedding_model=handshake.embedding_model)
+chunks = chunker.chunk("Chonkie loves to chonk your texts!")
+
+# Search the handshake
+results = handshake.search(
+    embedding=chunks[0].sentences[0].embedding, 
+    limit=2,
+)
+for result in results:
+    print(result["score"], result["text"])
+```
+</CodeGroup>
+

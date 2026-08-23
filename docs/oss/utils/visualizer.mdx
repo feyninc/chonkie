@@ -1,0 +1,52 @@
+---
+title: Visualizer
+description: Visualize your chunks and embeddings
+icon: "chart-line"
+iconType: "solid"
+---
+
+The `Visualizer` helps you visualize your chunks properly and compare different chunkers and settings with ease, either on the terminal or via HTML.
+
+![Visualizer Example](/assets/viz/viz-terminal.png)
+
+## Installation
+
+To make use of the `Visualizer`, you'll need to install the `viz` optional install.
+
+```bash
+pip install "chonkie[viz]"
+```
+
+## Usage
+
+To use the `Visualizer`, you'll need to import it from `chonkie.utils`.
+
+```python
+# Import the Visualizer
+from chonkie import Visualizer
+
+# Initialize the Visualizer
+viz = Visualizer()
+```
+
+The `Visualizer` has two main methods: `print` and `save`.
+
+The `print` method will print the chunks to the terminal. It accepts a list of `Chunk` objects or plain strings.
+
+```python
+viz.print(chunks)
+
+# Or you can directly call the Visualizer object
+viz(chunks)
+
+# You can also pass a list of plain strings
+viz(["First text segment", "Second text segment", "Third text segment"])
+```
+
+The `save` method will save the chunks to a HTML file. Like `print`, it accepts `Chunk` objects or strings.
+
+```python
+viz.save("chonkie.html", chunks)
+```
+
+![Visualizer Example](/assets/viz/viz-html.png)

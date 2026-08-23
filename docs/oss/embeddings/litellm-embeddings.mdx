@@ -1,0 +1,337 @@
+---
+title: LiteLLMEmbeddings
+sidebarTitle: LiteLLM
+description: Unified access to 100+ embedding providers through LiteLLM
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `LiteLLMEmbeddings` class, which provides unified access to 100+ embedding providers through the LiteLLM library. This includes OpenAI, VoyageAI, Cohere, AWS Bedrock, Azure, and many more.
+
+## Why LiteLLM?
+
+LiteLLM provides several advantages over using provider-specific implementations:
+
+- **Unified API**: Single interface for all providers
+- **Robust Error Handling**: Built-in retry logic and rate limiting
+- **No Provider Bugs**: Avoids provider-specific issues like VoyageAI's circular import bug
+- **Easy Switching**: Change providers without code changes
+- **Future-Proof**: LiteLLM team maintains provider integrations
+
+## Installation
+
+Embeddings require the `litellm` and `tiktoken` libraries. The `tokenizers` library is also recommended for better tokenizer support across providers.
+
+```bash
+pip install "chonkie[litellm]"
+```
+
+## Supported Providers
+
+LiteLLM supports 100+ providers. Here are some popular ones:
+
+| Provider | Model Name Format | Example |
+|----------|------------------|---------|
+| OpenAI | `model-name` or `openai/model-name` | `text-embedding-3-small` |
+| VoyageAI | `voyage/model-name` | `voyage/voyage-3-large` |
+| Cohere | `cohere/model-name` | `cohere/embed-english-v3.0` |
+| AWS Bedrock | `bedrock/model-name` | `bedrock/amazon.titan-embed-text-v1` |
+| Azure OpenAI | `azure/model-name` | `azure/text-embedding-ada-002` |
+| Google Vertex | `vertex_ai/model-name` | `vertex_ai/textembedding-gecko` |
+
+For a complete list, see the [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
+
+## Usage
+
+### Basic Usage
+
+```python
+from chonkie import LiteLLMEmbeddings
+
+# Initialize with default OpenAI model
+embeddings = LiteLLMEmbeddings()
+
+# Embed a single text
+vector = embeddings.embed("Your text here")
+
+# Embed a batch of texts
+vectors = embeddings.embed_batch(["Text 1", "Text 2", "Text 3"])
+```
+
+### Using VoyageAI
+
+```python
+import os
+from chonkie import LiteLLMEmbeddings
+
+# Set API key
+os.environ['VOYAGE_API_KEY'] = 'your_api_key'
+
+# Initialize VoyageAI embeddings through LiteLLM
+embeddings = LiteLLMEmbeddings(
+    model="voyage/voyage-3-large",
+    batch_size=128
+)
+
+vector = embeddings.embed("Your text here")
+```
+
+### Using Cohere
+
+```python
+import os
+from chonkie import LiteLLMEmbeddings
+
+# Set API key
+os.environ['COHERE_API_KEY'] = 'your_api_key'
+
+# Initialize Cohere embeddings
+embeddings = LiteLLMEmbeddings(
+    model="cohere/embed-english-v3.0"
+)
+
+vector = embeddings.embed("Your text here")
+```
+
+### Using AWS Bedrock
+
+```python
+from chonkie import LiteLLMEmbeddings
+
+# Initialize Bedrock embeddings (uses AWS credentials from environment)
+embeddings = LiteLLMEmbeddings(
+    model="bedrock/amazon.titan-embed-text-v1"
+)
+
+vector = embeddings.embed("Your text here")
+```
+
+## Configuration Options
+
+```python
+embeddings = LiteLLMEmbeddings(
+    model="text-embedding-3-small",  # Model name in LiteLLM format
+    api_key="your_api_key",          # Optional: API key (falls back to env vars)
+    api_base="https://custom.api",   # Optional: Custom API endpoint
+    timeout=60.0,                    # Timeout in seconds (default: 60)
+    max_retries=3,                   # Max retry attempts (default: 3)
+    batch_size=128,                  # Batch size for embed_batch (default: 128)
+    dimension=1536,                  # Optional: Explicit dimension (auto-detected)
+)
+```
+
+## Using with AutoEmbeddings
+
+```python
+from chonkie.embeddings import AutoEmbeddings
+
+# Use the litellm:// protocol
+embeddings = AutoEmbeddings.get_embeddings("litellm://voyage/voyage-3-large")
+
+# Or direct model name (if not ambiguous)
+embeddings = AutoEmbeddings.get_embeddings("litellm://text-embedding-3-small")
+```
+
+## Using with Pipeline
+
+```python
+from chonkie.pipeline import Pipeline
+
+# Option 1: In the refinery
+pipe = (
+    Pipeline()
+    .chunk_with("recursive", tokenizer="byte", chunk_size=16384)
+    .refine_with("embeddings", embedding_model="litellm://voyage/voyage-3-large")
+)
+
+result = pipe.run(texts=["Your text here"])
+
+# Option 2: Pass embeddings directly
+from chonkie import LiteLLMEmbeddings
+
+embeddings = LiteLLMEmbeddings(model="voyage/voyage-3-large")
+pipe = (
+    Pipeline()
+    .chunk_with("recursive", tokenizer="byte", chunk_size=16384)
+    .refine_with("embeddings", embedding_model=embeddings)
+)
+
+result = pipe.run(texts=["Your text here"])
+```
+
+## API Key Configuration
+
+LiteLLM automatically looks for API keys in environment variables. The variable name depends on the provider:
+
+- **OpenAI**: `OPENAI_API_KEY`
+- **VoyageAI**: `VOYAGE_API_KEY`
+- **Cohere**: `COHERE_API_KEY` or `CO_API_KEY`
+- **AWS Bedrock**: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+- **Azure**: `AZURE_API_KEY` and `AZURE_API_BASE`
+
+You can also pass the API key directly:
+
+```python
+embeddings = LiteLLMEmbeddings(
+    model="voyage/voyage-3-large",
+    api_key="your_api_key"
+)
+```
+
+## Error Handling
+
+LiteLLM provides robust error handling with automatic retries:
+
+```python
+from chonkie import LiteLLMEmbeddings
+
+embeddings = LiteLLMEmbeddings(
+    model="text-embedding-3-small",
+    max_retries=5,  # Retry up to 5 times
+    timeout=120.0   # Wait up to 2 minutes
+)
+
+try:
+    vector = embeddings.embed("Your text here")
+except RuntimeError as e:
+    print(f"Embedding failed: {e}")
+```
+
+## Tokenizer Support
+
+LiteLLMEmbeddings automatically selects the appropriate tokenizer based on the provider:
+
+- **OpenAI models**: Uses `tiktoken`
+- **VoyageAI models**: Attempts to load HuggingFace tokenizer, falls back to `tiktoken`
+- **Other models**: Uses `cl100k_base` from `tiktoken` as fallback
+
+```python
+embeddings = LiteLLMEmbeddings(model="voyage/voyage-3-large")
+tokenizer = embeddings.get_tokenizer()
+
+# Use the tokenizer
+tokens = tokenizer.encode("Your text here")
+```
+
+## Performance Tips
+
+1. **Batch Processing**: Use `embed_batch()` for multiple texts to reduce API calls
+2. **Adjust Batch Size**: Tune `batch_size` based on your text lengths and provider limits
+3. **Connection Pooling**: LiteLLM handles connection pooling automatically
+4. **Async Support**: LiteLLM supports async operations (may be added in future versions)
+
+## Comparison with Provider-Specific Classes
+
+| Feature | LiteLLMEmbeddings | VoyageAIEmbeddings | OpenAIEmbeddings |
+|---------|-------------------|-------------------|------------------|
+| Providers Supported | 100+ | VoyageAI only | OpenAI only |
+| Circular Import Issues | ✅ None | ❌ VoyageAI bug | ✅ None |
+| Built-in Retries | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
+| Rate Limiting | ✅ Built-in | ❌ Manual | ❌ Manual |
+| Easy Provider Switching | ✅ Yes | ❌ No | ❌ No |
+| Maintenance Burden | ✅ Low | ⚠️ Medium | ⚠️ Medium |
+
+## Common Use Cases
+
+### Migrating from VoyageAI to avoid circular import
+
+```python
+# Before (with circular import issue)
+from chonkie import VoyageAIEmbeddings
+embeddings = VoyageAIEmbeddings(model="voyage-3-large")
+
+# After (no circular import issue)
+from chonkie import LiteLLMEmbeddings
+embeddings = LiteLLMEmbeddings(model="voyage/voyage-3-large")
+```
+
+### Multi-provider experimentation
+
+```python
+from chonkie import LiteLLMEmbeddings
+
+# Try different providers easily
+providers = [
+    "text-embedding-3-small",           # OpenAI
+    "voyage/voyage-3-large",            # VoyageAI
+    "cohere/embed-english-v3.0",        # Cohere
+]
+
+for model in providers:
+    embeddings = LiteLLMEmbeddings(model=model)
+    vector = embeddings.embed("test text")
+    print(f"{model}: dimension={len(vector)}")
+```
+
+### Cost optimization
+
+```python
+# Use smaller, cheaper models for development
+dev_embeddings = LiteLLMEmbeddings(model="text-embedding-3-small")
+
+# Use larger, more accurate models for production
+prod_embeddings = LiteLLMEmbeddings(model="voyage/voyage-3-large")
+```
+
+## Troubleshooting
+
+### Import Error
+
+```
+ImportError: litellm package is not available
+```
+
+**Solution**: Install the litellm extra:
+```bash
+pip install "chonkie[litellm]"
+```
+
+### API Key Not Found
+
+```
+ValueError: OpenAI API key not found
+```
+
+**Solution**: Set the appropriate environment variable or pass `api_key` parameter.
+
+### Dimension Detection Failed
+
+```
+Warning: Failed to auto-detect embedding dimension
+```
+
+**Solution**: Provide dimension explicitly:
+```python
+embeddings = LiteLLMEmbeddings(model="custom-model", dimension=768)
+```
+
+## Example: Complete RAG Pipeline
+
+```python
+import os
+from chonkie.pipeline import Pipeline
+
+# Set API key
+os.environ['VOYAGE_API_KEY'] = 'your_key'
+
+# Build pipeline with LiteLLM embeddings
+pipe = (
+    Pipeline()
+    .chunk_with("semantic", tokenizer="byte", chunk_size=512, threshold=0.5)
+    .refine_with("embeddings", embedding_model="litellm://voyage/voyage-3-large")
+)
+
+# Process documents
+documents = [
+    "Your first document...",
+    "Your second document...",
+    "Your third document..."
+]
+
+result = pipe.run(texts=documents)
+
+# Access chunks with embeddings
+for chunk in result.chunks:
+    print(f"Text: {chunk.text[:50]}...")
+    print(f"Embedding: {chunk.embedding[:5]}...")  # First 5 dimensions
+```

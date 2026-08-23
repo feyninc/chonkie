@@ -1,9 +1,0 @@
-{
-  "title": "Utils",
-  "icon": "Wrench",
-  "pages": [
-    "visualizer",
-    "hubbie",
-    "logging"
-  ]
-}

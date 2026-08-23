@@ -1,0 +1,139 @@
+---
+title: Chroma Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a Chroma collection.
+---
+
+The `ChromaHandshake` class provides seamless integration between Chonkie's chunking system and ChromaDB, a popular vector database. 
+
+Embed and store your Chonkie chunks in ChromaDB without ever leaving the Chonkie SDK.
+
+
+## Installation
+
+Before using the Chroma handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[chroma]
+```
+
+## Basic Usage
+
+### Initialization
+
+```python
+from chonkie import ChromaHandshake
+
+# Initialize with default settings (in-memory ChromaDB)
+handshake = ChromaHandshake()
+
+# Or specify a persistent storage path
+handshake = ChromaHandshake(path="./chroma_db")
+
+# Or use an existing Chroma client
+import chromadb
+client = chromadb.Client()
+handshake = ChromaHandshake(client=client, collection_name="my_collection")
+```
+
+### Writing Chunks to ChromaDB
+
+```python
+from chonkie import ChromaHandshake, SemanticChunker
+
+handshake = ChromaHandshake() # Initializes a new Chroma client
+
+chunker = SemanticChunker()
+chunks = chunker("Chonkie is the best chonker ever!")
+
+handshake.write(chunks)
+```
+
+### Searching Chunks in ChromaDB
+
+You can retrieve the most similar chunks from your ChromaDB collection using the `search` method:
+<CodeGroup>
+```python search using a query
+from chonkie import ChromaHandshake
+
+# Initialize the handshake
+handshake = ChromaHandshake(collection_name="my_documents")
+results = handshake.search(query="best chonker", limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using embedding
+from chonkie import ChromaHandshake
+
+# Initialize the handshake
+handshake = ChromaHandshake(collection_name="my_documents")
+
+# Generate an embedding using the handshake's configured embedding function
+embedding = handshake.embedding_function("best chonker").tolist()
+
+results = handshake.search(embedding=embedding, limit=2)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using chonkie chunks
+from chonkie import ChromaHandshake, SemanticChunker
+
+# Initialize the handshake
+handshake = ChromaHandshake(collection_name="my_documents")
+
+# Create some chunks
+chunker = SemanticChunker()
+chunks = chunker.chunk("Chonkie is the best chonker ever!")
+
+# The chunker creates chunks but doesn't store their embeddings on the object.
+# We can generate an embedding from a chunk's text to use for the search.
+if chunks:
+    search_embedding = handshake.embedding_function(chunks.text).tolist()
+
+    # Search the handshake using the generated embedding
+    results = handshake.search(
+        embedding=search_embedding,
+        limit=2,
+    )
+    for result in results:
+        print(result["score"], result["text"])
+```
+</CodeGroup>
+
+## Parameters
+
+<ParamField
+    path="client"
+    type="Optional[chromadb.Client]"
+    default="None"
+>
+    Chroma client instance. If not provided, a new client will be created.
+</ParamField>
+
+<ParamField
+    path="collection_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the collection to use. If "random", a random name will be generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use.
+</ParamField>
+
+<ParamField
+    path="path"
+    type="Optional[str]"
+    default="None"
+>
+    If provided, creates a persistent Chroma client at the specified path.
+</ParamField>
+

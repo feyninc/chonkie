@@ -1,0 +1,27 @@
+name: Freeze PRs
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr close "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --comment "$(cat <<'EOF'
+          We're freezing PRs on main while we build Chonkie v2.
+
+          v1.7 is the last 1.x release. Fixes and new work go into 2.0.
+
+          Please hold PRs until v2 is stable — we'll turn this off when we're ready. Thanks for bearing with us.
+          EOF
+          )"

@@ -1,9 +1,0 @@
-{
-  "title": "Experimental",
-  "icon": "FlaskConical",
-  "pages": [
-    "overview",
-    "code-chunker",
-    "chonkie-cli"
-  ]
-}

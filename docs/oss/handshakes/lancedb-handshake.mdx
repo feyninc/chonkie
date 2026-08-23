@@ -1,0 +1,133 @@
+---
+title: LanceDB Handshake
+sidebarTitle: LanceDB Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a LanceDB table.
+---
+
+The `LanceDBHandshake` class provides seamless integration between Chonkie's chunking system and LanceDB, a serverless vector database built on Apache Arrow.
+
+Embed and store your Chonkie chunks in LanceDB — locally or in the cloud — without ever leaving the Chonkie SDK.
+
+## Installation
+
+Before using the LanceDB handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[lancedb]
+```
+
+## Basic Usage
+
+### Initialization
+
+<CodeGroup>
+```python in-memory (ephemeral)
+from chonkie import LanceDBHandshake
+
+# Default: in-memory LanceDB, auto-generated table name
+handshake = LanceDBHandshake()
+```
+
+```python local persistent storage
+from chonkie import LanceDBHandshake
+
+# Persist to a local directory
+handshake = LanceDBHandshake(uri="./my_lancedb", table_name="my_chunks")
+```
+
+```python existing connection
+import lancedb
+from chonkie import LanceDBHandshake
+
+conn = lancedb.connect("./my_lancedb")
+handshake = LanceDBHandshake(connection=conn, table_name="my_chunks")
+```
+
+```python LanceDB Cloud
+from chonkie import LanceDBHandshake
+
+handshake = LanceDBHandshake(
+    uri="db://my-project",
+    table_name="my_chunks",
+)
+```
+</CodeGroup>
+
+### Writing Chunks to LanceDB
+
+```python
+from chonkie import LanceDBHandshake, SemanticChunker
+
+# Initialize the handshake
+handshake = LanceDBHandshake(uri="./my_lancedb", table_name="my_documents")
+
+# Create some chunks
+chunker = SemanticChunker()
+chunks = chunker("Chonkie loves to chonk your texts!")
+
+# Write chunks to LanceDB
+handshake.write(chunks)
+```
+
+### Searching Chunks in LanceDB
+
+You can retrieve the most similar chunks from your LanceDB table using the `search` method:
+
+<CodeGroup>
+```python search using a query
+from chonkie import LanceDBHandshake
+
+handshake = LanceDBHandshake(uri="./my_lancedb", table_name="my_documents")
+
+results = handshake.search(query="chonk your texts", limit=5)
+for result in results:
+    print(result["score"], result["text"])
+```
+
+```python search using an embedding
+from chonkie import LanceDBHandshake
+
+handshake = LanceDBHandshake(uri="./my_lancedb", table_name="my_documents")
+
+embedding = handshake.embedding_model.embed("chonk your texts").tolist()
+results = handshake.search(embedding=embedding, limit=5)
+for result in results:
+    print(result["score"], result["text"])
+```
+</CodeGroup>
+
+## Parameters
+
+<ParamField
+    path="connection"
+    type="Optional[lancedb.DBConnection]"
+    default="None"
+>
+    An existing LanceDB connection. If not provided, a new connection is created using `uri`.
+</ParamField>
+
+<ParamField
+    path="uri"
+    type="Union[str, os.PathLike]"
+    default="memory://"
+>
+    URI of the LanceDB database. Use `"memory://"` for an ephemeral in-memory database, a local directory path for persistent storage, or a `db://` URI for LanceDB Cloud.
+</ParamField>
+
+<ParamField
+    path="table_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the table to write chunks to. If `"random"`, a unique name is auto-generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use. Can be a model name string or a `BaseEmbeddings` instance.
+</ParamField>

@@ -1,0 +1,21 @@
+---
+title: SentenceTransformerEmbeddings
+sidebarTitle: SentenceTransformer
+description: Embed text using SentenceTransformer embedding models
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `SentenceTransformer` class, which is a wrapper around the `sentence-transformers` library.
+
+## Installation
+
+Embeddings require the `sentence-transformers` library. See the [Installation Guide](/oss/installation) for more information.
+
+## Usage
+
+```python
+from chonkie import SentenceTransformerEmbeddings
+
+embeddings = SentenceTransformerEmbeddings("all-MiniLM-L6-v2")
+```

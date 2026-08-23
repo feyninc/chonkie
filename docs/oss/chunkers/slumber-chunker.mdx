@@ -1,0 +1,174 @@
+---
+title: "Slumber Chunker"
+description: "Agentic chunking powered by generative models via the Genie interface"
+icon: "wand-magic-sparkles"
+iconType: "solid"
+---
+
+Meet the `SlumberChunker` – Chonkie's first **agentic chunker**! This isn't your average chunker; it uses the reasoning power of large generative models (LLMs) to understand your text deeply and create truly S-tier chunks.
+
+## API Reference
+
+To use the `SlumberChunker` via the API, check out the [API reference documentation](../../api/chunkers/slumber-chunker).
+
+## Introducing Genie! 🧞
+
+The magic behind `SlumberChunker` is **Genie**, Chonkie's interface for integrating generative models and APIs. Genie allows `SlumberChunker` to intelligently analyze text structure, identify optimal split points, and even summarize or rephrase content for the best possible chunk quality.
+
+**Available Genies:**
+- `GeminiGenie` - Google Gemini APIs
+- `OpenAIGenie` - OpenAI APIs (also works with OpenAI-compatible providers)
+- `AzureOpenAIGenie` - Azure OpenAI APIs
+- `GroqGenie` - Fast inference on Groq hardware
+- `CerebrasGenie` - Fastest inference on Cerebras hardware
+
+<Card title="Requires [genie] Install" icon="wand-magic">
+  To unleash the power of SlumberChunker and Genie, you need the `[genie]`
+  optional install. This includes the necessary libraries to connect to various
+  generative model APIs.
+</Card>
+
+```bash
+pip install "chonkie[genie]"
+```
+
+## Installation
+
+As mentioned, SlumberChunker requires the `[genie]` optional install:
+
+```bash
+pip install "chonkie[genie]"
+```
+
+<Info>
+  For general installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import SlumberChunker
+from chonkie.genie import GeminiGenie
+
+# Optional: Initialize Genie
+genie = GeminiGenie("gemini-3-pro-preview")
+
+# Basic initialization
+chunker = SlumberChunker(
+    genie=genie,                        # Genie interface to use
+    tokenizer="character",  # Default tokenizer (or use "gpt2", etc.)
+    chunk_size=1024,                    # Maximum chunk size
+    candidate_size=128,                 # How many tokens Genie looks at for potential splits
+    min_characters_per_chunk=24,        # Minimum number of characters per chunk
+    verbose=True                        # See the progress bar for the chunking process
+)
+
+# You can also rely on default Genie setup if configured globally
+# chunker = SlumberChunker() # Uses default Genie if available
+```
+
+## Parameters
+
+<ParamField path="genie" type="Optional[BaseGenie]" default="None">
+  An instance of a Genie interface (e.g., `GeminiGenie`). If `None`, tries to
+  load a default Genie configuration, which is
+  `GeminiGenie("gemini-3-pro-preview")`
+</ParamField>
+
+<ParamField
+  path="tokenizer"
+  type="Union[str, Callable, Any]"
+  default="character"
+>
+  Tokenizer or token counting function used for initial splitting and size
+  estimation.
+</ParamField>
+
+<ParamField path="chunk_size" type="int" default="1024">
+  The target maximum number of tokens per chunk. Genie will try to adhere to
+  this.
+</ParamField>
+
+<ParamField path="rules" type="RecursiveRules" default="RecursiveRules()">
+  Initial recursive rules used to generate candidate split points before Genie
+  refines them. See
+  [RecursiveChunker](/oss/chunkers/recursive-chunker#additional-information) for
+  details.
+</ParamField>
+
+<ParamField path="candidate_size" type="int" default="128">
+  The number of tokens around a potential split point that Genie examines to
+  make its decision.
+</ParamField>
+
+<ParamField path="min_characters_per_chunk" type="int" default="24">
+  Minimum number of characters required for a chunk to be considered valid.
+</ParamField>
+
+<ParamField path="verbose" type="bool" default="True">
+  If `True`, prints detailed information about Genie's decision-making process
+  during chunking. Useful for debugging!
+</ParamField>
+
+## Usage
+
+### Single Text Chunking
+
+```python
+text = """Complex document with interwoven ideas. Section 1 introduces concept A.
+Section 2 discusses concept B, but references A frequently.
+Section 3 concludes by merging A and B. Traditional chunkers might struggle here."""
+
+# Assuming 'chunker' is initialized as shown above
+chunks = chunker.chunk(text)
+
+for chunk in chunks:
+    print(f"Chunk text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}")
+    print(f"Start index: {chunk.start_index}")
+    print(f"End index: {chunk.end_index}")
+    # SlumberChunk might have additional metadata from Genie
+```
+
+### Batch Chunking
+
+```python
+texts = [
+    "First document requiring nuanced splitting...",
+    "Second document where agentic understanding helps..."
+]
+batch_chunks = chunker.chunk_batch(texts) # Note: Batch processing might be slower due to LLM calls
+
+for doc_chunks in batch_chunks:
+    for chunk in doc_chunks:
+        print(f"Chunk: {chunk.text}")
+```
+
+### Using as a Callable
+
+```python
+# Single text
+chunks = chunker("Let Genie decide the best way to CHONK this...")
+
+# Multiple texts
+batch_chunks = chunker(["Text 1...", "Text 2..."])
+```
+
+## Return Type
+
+SlumberChunker returns chunks as `Chunk` objects.
+
+```python
+from dataclasses import dataclass
+from typing import Optional, Union
+
+@dataclass
+class Chunk:
+    text: str                                           # The chunk text
+    start_index: int                                    # Starting position in original text
+    end_index: int                                      # Ending position in original text
+    token_count: int                                    # Number of tokens in chunk
+    context: Optional[str] = None                       # Optional overlap context text
+    embedding: Union[list[float], "np.ndarray", None] = None  # Optional embedding vector
+```

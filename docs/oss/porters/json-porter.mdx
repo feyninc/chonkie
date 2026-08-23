@@ -1,0 +1,32 @@
+---
+title: JSONPorter
+sidebarTitle: JSONPorter
+icon: "file-code"
+iconType: "solid"
+description: Export Chonkie's Chunks into a JSON file.
+---
+
+Port your chunks to a JSON file with the `JSONPorter`. This is useful for exporting your chunked data for use in other applications or for archiving.
+
+## Initialization
+
+```python
+from chonkie import JSONPorter
+from chonkie.types.base import Chunk
+
+chunks = [
+    Chunk(
+        id="chunk1",
+        text="This is the first chunk.",
+        metadata={"source": "document1.txt"}
+    ),
+    Chunk(
+        id="chunk2",
+        text="This is the second chunk.",
+        metadata={"source": "document2.txt"}
+    )
+]
+
+porter = JSONPorter()
+porter.export(chunks)
+```

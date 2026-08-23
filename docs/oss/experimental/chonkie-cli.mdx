@@ -1,0 +1,262 @@
+---
+title: "CLI"
+description: "Chonkie Command Line Interface"
+sidebarTitle: "CLI"
+icon: "terminal"
+---
+
+# Chonkie CLI
+
+Chonkie provides a powerful Command Line Interface (CLI) to perform chunking and run pipelines directly from your terminal.
+
+## Installation
+
+The CLI is included with the default `chonkie` installation:
+
+```bash
+pip install chonkie
+```
+
+## Basic Usage
+
+
+The CLI provides a single `chonkie` command with two primary subcommands:
+
+1. **`chunk`** – Quickly chunk text or files.
+2. **`pipeline`** – Run full Chonkie pipelines (fetch → chef → chunk → refine → handbook).
+
+To see available options and usage details, use the help flags:
+
+<CodeGroup>
+```bash main
+chonkie --help
+
+# Usage: chonkie [OPTIONS] COMMAND [ARGS]...
+#
+# > 🦛 CHONK your texts with Chonkie
+#
+# ╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │ --install-completion          Install completion for the current shell.                                        │
+# │ --show-completion             Show completion for the current shell, to copy it or customize the installation. │
+# │ --help                        Show this message and exit.                                                      │
+# ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+#
+# ╭─ Commands ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │ chunk      Chunk text using a specified chunker and optionally store it.                                       │
+# │ pipeline   Run a processing pipeline on text or files.                                                         │
+# ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+```bash chunk
+chonkie chunk --help
+
+#  Usage: chonkie chunk [OPTIONS] TEXT                                                                                                                                 
+#                                                                                                                                                                      
+# ╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │ *    text      TEXT  Text to chunk or path to file [required]                                                                                                     │
+# ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+# ╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │ --chunker               TEXT     Chunking method to use. Options: code, fast, late, neural, recursive, semantic, sentence, slumber, table, token                  │
+# │                                  [default: semantic]                                                                                                              │
+# │ --chunk-size            INTEGER  Maximum number of tokens per chunk                                                                                               │
+# │ --chunk-overlap         INTEGER  Number of tokens to overlap between chunks                                                                                       │
+# │ --threshold             FLOAT    Threshold for semantic similarity (0-1)                                                                                          │
+# │ --chunker-params        TEXT     Additional parameters for the chunker as key=value pairs (e.g., --chunker-params tokenizer=gpt2 min_characters_per_chunk=50)     │
+# │ --handshaker            TEXT     Where to store the chunks. Options: chroma, elastic, milvus, mongodb, pgvector, pinecone, qdrant, turbopuffer, weaviate          │
+# │ --help                           Show this message and exit.                                                                                                      │
+# ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+```bash pipeline
+chonkie pipeline --help
+
+#  Usage: chonkie pipeline [OPTIONS] [TEXT]                                                                                  
+#
+#  Run a processing pipeline on text or files.
+#
+# ╭─ Arguments ─────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │   text      [TEXT]  Text to process or path to file                                                                     │
+# ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+# ╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+# │ --fetcher                  TEXT     Fetcher method to use (e.g., file) [default: file]                                  │
+# │ --d                        TEXT     directory to process, if text is not a file                                         │
+# │ --ext                      TEXT     file extensions to process, if d is specified, example ['.md', '.txt']              │
+# │ --chef                     TEXT     Chef method to use (e.g., text, markdown)                                           │
+# │ --chef-params              TEXT     Parameters for the chef as key=value pairs (e.g., --chef-params                     │
+# │                                     clean_whitespace=true)                                                              │
+# │ --chunker                  TEXT     Chunking method to use [default: semantic]                                          │
+# │ --chunk-size               INTEGER  Maximum number of tokens per chunk                                                  │
+# │ --chunk-overlap            INTEGER  Number of tokens to overlap between chunks                                          │
+# │ --threshold                FLOAT    Threshold for semantic similarity (0-1)                                             │
+# │ --chunker-params           TEXT     Additional parameters for the chunker as key=value pairs (e.g., --chunker-params    │
+# │                                     tokenizer=gpt2 min_characters_per_chunk=50)                                         │
+# │ --refiner                  TEXT     Refiner method to use                                                               │
+# │ --refiner-params           TEXT     Parameters for the refiner as key=value pairs (e.g., --refiner-params               │
+# │                                     context_size=50)                                                                    │
+# │ --handshaker               TEXT     Handshaker method to use                                                            │
+# │ --handshaker-params        TEXT     Parameters for the handshaker as key=value pairs (e.g., --handshaker-params         │
+# │                                     collection_name=documents)                                                          │
+# │ --help                              Show this message and exit.                                                         │
+# ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+</CodeGroup>
+
+### Chunking Texts or Files
+
+Use the `chunk` command to quickly chunk text or a single file.
+
+**Syntax**:
+```bash
+chonkie chunk [TEXT_OR_PATH] [OPTIONS]
+```
+
+**Options**:
+- `--chunker`: The chunking method to use (default: `semantic`). Options: `semantic`, `token`, `sentence`, `recursive`, etc.
+- `--chunk-size`: Maximum number of tokens per chunk (e.g., `512`, `1024`).
+- `--chunk-overlap`: Number of tokens to overlap between chunks (e.g., `50`, `100`).
+- `--threshold`: Threshold for semantic similarity (0-1), used by semantic chunkers.
+- `--chunker-params`: Additional chunker parameters as `key=value` pairs. Can be used multiple times.
+- `--handshaker`: Optional storage backend to export chunks.
+
+**Examples**:
+
+```bash
+# Chunk raw text with default settings
+chonkie chunk "This is a long text that needs chunking..." --chunker token
+
+# Chunk with explicit chunk size
+chonkie chunk "Long text..." --chunker recursive --chunk-size 512
+
+# Chunk with overlap
+chonkie chunk document.txt --chunker token --chunk-size 1024 --chunk-overlap 100
+
+# Chunk with semantic threshold
+chonkie chunk document.txt --chunker semantic --threshold 0.8
+
+# Chunk with additional parameters using key=value pairs
+chonkie chunk document.txt \
+  --chunker recursive \
+  --chunk-size 512 \
+  --chunker-params min_characters_per_chunk=50 \
+  --chunker-params tokenizer=gpt2
+
+# Chunk and store in a vector DB (e.g., Chroma)
+chonkie chunk document.txt --handshaker chroma
+```
+
+---
+
+### Running Pipelines
+
+The `pipeline` command is more powerful and supports processing directories, applying chefs/refiners, and exporting data.
+
+**Syntax**:
+```bash
+chonkie pipeline [TEXT_OR_PATH] [OPTIONS]
+```
+
+**Core Options**:
+- `--d`: Directory to process (mutually exclusive with text/file argument).
+- `--ext`: File extensions to include when processing a directory (e.g., `.md`, `.txt`). Can be used multiple times.
+- `--chef`: Preprocessor to use (e.g., `text`, `markdown`).
+- `--chef-params`: Parameters for the chef as `key=value` pairs. Can be used multiple times.
+- `--chunker`: Chunking method (default: `semantic`).
+- `--chunk-size`: Maximum number of tokens per chunk.
+- `--chunk-overlap`: Number of tokens to overlap between chunks.
+- `--threshold`: Threshold for semantic similarity (0-1).
+- `--chunker-params`: Additional chunker parameters as `key=value` pairs. Can be used multiple times.
+- `--refiner`: Optional refinement strategy (e.g., `overlap`).
+- `--refiner-params`: Parameters for the refiner as `key=value` pairs. Can be used multiple times.
+- `--handshaker`: Optional destination storage.
+- `--handshaker-params`: Parameters for the handshaker as `key=value` pairs. Can be used multiple times.
+
+**Examples**:
+
+#### 1. Process a Directory
+Process all markdown and text files in the `docs` directory:
+```bash
+chonkie pipeline --d docs --ext .md --ext .txt --chunker recursive
+```
+
+#### 2. Process a Single File
+Run a pipeline on a single file:
+```bash
+chonkie pipeline README.md --chunker token --chef text
+```
+
+#### 3. Pipeline with Custom Chunking Parameters
+Use explicit parameters and additional chunker options:
+```bash
+chonkie pipeline document.txt \
+  --chunker recursive \
+  --chunk-size 512 \
+  --chunker-params min_characters_per_chunk=50
+```
+
+#### 4. Pipeline with Multiple Component Parameters
+Configure chef, chunker, and refiner with custom parameters:
+```bash
+chonkie pipeline document.txt \
+  --chef text \
+  --chunker token \
+  --chunk-size 1024 \
+  --chunk-overlap 100 \
+  --refiner overlap \
+  --refiner-params context_size=50
+```
+
+#### 5. Full RAG Pipeline
+Run a full RAG pipeline: fetch from directory -> process markdown -> chunk recursively -> export to ChromaDB.
+
+```bash
+chonkie pipeline \
+  --d ./knowledge_base \
+  --ext .md \
+  --chef markdown \
+  --chunker recursive \
+  --chunk-size 512 \
+  --handshaker chroma \
+  --handshaker-params collection_name=documents
+```
+
+## Parameter Configuration
+
+### Explicit Parameters
+For commonly used parameters, you can use dedicated options:
+- `--chunk-size`: Set the maximum tokens per chunk
+- `--chunk-overlap`: Set overlap between chunks
+- `--threshold`: Set semantic similarity threshold
+
+### Key-Value Parameters
+For additional or component-specific parameters, use the `*_params` options with `key=value` syntax:
+
+```bash
+# Single parameter
+--chunker-params tokenizer=gpt2
+
+# Multiple parameters (repeat the option)
+--chunker-params tokenizer=gpt2 --chunker-params min_characters_per_chunk=50
+
+# Boolean parameters
+--chunker-params verbose=true
+
+# Numeric parameters (automatically converted)
+--chunker-params chunk_size=512
+--chunker-params threshold=0.8
+```
+
+**Type Conversion**: Parameters are automatically converted:
+- `true`/`false` → boolean
+- `none`/`null` → None
+- Numeric strings → int or float
+- Other strings → string
+
+**Parameter Precedence**: Explicit options (like `--chunk-size`) override values in `--chunker-params` if both are provided.
+
+## Tips
+- Use `--help` on any command to see full options: `chonkie pipeline --help`.
+- Directory processing recursively walks subdirectories.
+- Output is printed to stdout by default unless a handshaker is specified.
+- Combine explicit parameters with `*_params` for maximum flexibility.
+- Check component documentation for available parameters for each chunker, chef, refiner, or handshaker.

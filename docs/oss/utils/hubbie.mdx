@@ -1,0 +1,42 @@
+---
+title: Hubbie
+description: Hubbie is a utility for accessing Chonkie's saved recipes.
+icon: "boxes-stacked"
+iconType: "solid"
+---
+
+Hubbie is a utility for accessing Chonkie's saved recipes. Recipes are pre-defined chunking rules for different languages and document types. When initializing a chunker with `from_recipe`, you can pass in the recipe name and language to use the recipe.
+
+## Installation
+
+To make use of Hubbie, you'll need to install the `hub` optional install.
+
+```bash
+pip install "chonkie[hub]"
+```
+
+## Usage
+
+```python
+from chonkie import RecursiveChunker
+
+# Initialize the recursive chunker with the recipe name and language
+chunker = RecursiveChunker.from_recipe("markdown", lang="en")
+
+# Chunk the text
+text = ... # Your text string
+
+# CHONK!
+chunks = chunker(text)
+```
+
+## Recipes
+
+You can access Chonkie's saved recipes on [Hugging Face](https://huggingface.co/datasets/chonkie-ai/recipes).
+
+<iframe
+  src="https://huggingface.co/datasets/chonkie-ai/recipes/embed/viewer/recipes/train"
+  frameborder="0"
+  width="100%"
+  height="560px"
+></iframe>

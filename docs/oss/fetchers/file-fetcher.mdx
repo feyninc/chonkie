@@ -1,0 +1,155 @@
+---
+title: FileFetcher
+sidebarTitle: FileFetcher
+icon: "file"
+iconType: "solid"
+description: Fetch files from local filesystem for pipeline processing
+---
+
+The `FileFetcher` retrieves files from your local filesystem. It supports two modes: fetching a single file or fetching multiple files from a directory with optional extension filtering.
+
+## Installation
+
+FileFetcher is included with the base Chonkie installation:
+
+```bash
+pip install chonkie
+```
+
+## Usage
+
+### Single File Mode
+
+Fetch a single file by providing the `path` parameter:
+
+```python
+from chonkie.pipeline import Pipeline
+
+# Fetch and process a single file
+doc = (Pipeline()
+    .fetch_from("file", path="document.txt")
+    .process_with("text")
+    .chunk_with("recursive", chunk_size=512)
+    .run())
+
+print(f"Chunked into {len(doc.chunks)} chunks")
+```
+
+### Directory Mode
+
+Fetch multiple files from a directory using the `dir` parameter:
+
+```python
+# Fetch all files from a directory
+docs = (Pipeline()
+    .fetch_from("file", dir="./documents")
+    .process_with("text")
+    .chunk_with("recursive", chunk_size=512)
+    .run())
+
+print(f"Processed {len(docs)} documents")
+for doc in docs:
+    print(f"  - {len(doc.chunks)} chunks")
+```
+
+### Extension Filtering
+
+Filter files by extension when using directory mode:
+
+```python
+# Fetch only .txt and .md files
+docs = (Pipeline()
+    .fetch_from("file", dir="./documents", ext=[".txt", ".md"])
+    .process_with("text")
+    .chunk_with("recursive", chunk_size=512)
+    .run())
+```
+
+## Parameters
+
+<ParamField path="path" type="str" optional>
+  Path to a single file. Cannot be used with `dir`.
+</ParamField>
+
+<ParamField path="dir" type="str" optional>
+  Directory to fetch files from. Cannot be used with `path`.
+</ParamField>
+
+<ParamField path="ext" type="list[str]" optional>
+  List of file extensions to filter (e.g., `[".txt", ".md"]`). Only used with `dir` parameter.
+</ParamField>
+
+## Return Values
+
+- **Single file mode** (`path` provided): Returns a single `Path` object
+- **Directory mode** (`dir` provided): Returns `list[Path]` containing all matching files
+
+## Standalone Usage
+
+You can also use FileFetcher directly without the pipeline:
+
+```python
+from chonkie import FileFetcher
+
+fetcher = FileFetcher()
+
+# Single file
+file_path = fetcher.fetch(path="document.txt")
+print(file_path)  # PosixPath('document.txt')
+
+# Directory with extension filter
+files = fetcher.fetch(dir="./docs", ext=[".txt", ".md"])
+for file in files:
+    print(file)
+```
+
+## Error Handling
+
+FileFetcher validates inputs and provides clear error messages:
+
+```python
+# FileNotFoundError if file doesn't exist
+fetcher.fetch(path="nonexistent.txt")  # Raises FileNotFoundError
+
+# ValueError if both path and dir are provided
+fetcher.fetch(path="file.txt", dir="./docs")  # Raises ValueError
+
+# ValueError if neither is provided
+fetcher.fetch()  # Raises ValueError
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use extension filtering for large directories">
+    When working with directories containing many files, always specify `ext` to avoid processing unwanted files:
+
+    ```python
+    # Good - only processes markdown files
+    .fetch_from("file", dir="./docs", ext=[".md"])
+
+    # Potentially slow - processes ALL files
+    .fetch_from("file", dir="./docs")
+    ```
+  </Accordion>
+
+  <Accordion title="Use absolute paths for clarity">
+    While relative paths work, absolute paths make your pipeline more portable:
+
+    ```python
+    from pathlib import Path
+
+    docs_dir = Path(__file__).parent / "documents"
+    .fetch_from("file", dir=str(docs_dir), ext=[".txt"])
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+After fetching files, you'll typically want to:
+1. **Process** them with a [Chef](/oss/chefs/overview) to parse content
+2. **Chunk** them with a [Chunker](/oss/chunkers/overview) to split into manageable pieces
+3. **Refine** chunks with [Refineries](/oss/refinery/overview) for better quality
+
+See the [Pipeline Guide](/oss/pipelines) for complete examples.

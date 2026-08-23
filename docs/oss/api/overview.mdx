@@ -1,0 +1,51 @@
+---
+title: "API Server"
+description: "Self-host Chonkie as a REST API for language-agnostic text chunking"
+sidebarTitle: "Overview"
+icon: "server"
+---
+
+Run Chonkie as a self-hosted REST API and call any chunker or refinery from any language, framework, or HTTP client — no auth, no billing, no data leaving your infra.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="bolt" href="/oss/api/quickstart">
+    Up and running in under a minute
+  </Card>
+  <Card title="Endpoints" icon="code" href="/oss/api/endpoints">
+    All chunkers and refineries
+  </Card>
+  <Card title="Pipelines" icon="pipe-section" href="/oss/api/pipelines">
+    Save and execute reusable chunking workflows
+  </Card>
+  <Card title="Docker" icon="docker" href="/oss/api/docker">
+    Container and production deployment
+  </Card>
+</CardGroup>
+
+## Why Use the API?
+
+- **Language-agnostic** — call from JavaScript, Go, Ruby, or any HTTP client
+- **Self-hosted** — your data never leaves your infrastructure
+- **Full feature parity** — all Chonkie chunkers and refineries, over HTTP
+- **Batch support** — chunk multiple documents in a single request
+- **No auth required** — just run it and chunk away
+
+## Available Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `POST /v1/chunk/token` | Fixed-size token windows |
+| `POST /v1/chunk/sentence` | Sentence-boundary splitting |
+| `POST /v1/chunk/recursive` | Structural/hierarchical splitting |
+| `POST /v1/chunk/semantic` | Embedding-based semantic splitting |
+| `POST /v1/chunk/code` | AST-aware code splitting |
+| `POST /v1/refine/overlap` | Add overlap context to chunks |
+| `POST /v1/refine/embeddings` | Attach embeddings to chunks |
+| `POST /v1/pipelines` | Create a reusable pipeline |
+| `GET /v1/pipelines` | List all pipelines |
+| `GET /v1/pipelines/{id}` | Get a pipeline by ID |
+| `PUT /v1/pipelines/{id}` | Update a pipeline |
+| `DELETE /v1/pipelines/{id}` | Delete a pipeline |
+| `POST /v1/pipelines/{id}/execute` | Execute a pipeline on text |
+| `GET /health` | Health check |
+| `GET /` | API info and available endpoints |

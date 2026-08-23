@@ -1,0 +1,41 @@
+---
+title: GeminiEmbeddings
+sidebarTitle: GeminiEmbeddings
+description: Embed text using Google Gemini embeddings via GenAI API
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `GeminiEmbeddings` class, which is a wrapper around the Google GenAI API.
+
+## Installation
+
+Gemini embeddings require the `google-genai` and `numpy` libraries. See the [Installation Guide](/oss/installation) for more information.
+
+```bash
+pip install "chonkie[gemini]"
+```
+
+## Usage
+
+```python
+from chonkie import GeminiEmbeddings
+
+# Initialize Gemini embeddings
+embeddings = GeminiEmbeddings(
+    model="gemini-embedding-exp-03-07",  # Optional: specify model
+    api_key="YOUR_GEMINI_API_KEY",       # Optional: or set GEMINI_API_KEY env var
+    task_type="SEMANTIC_SIMILARITY",     # Optional: task type
+)
+
+# Embed a single text
+vector = embeddings.embed("Your text here")
+```
+
+## Example
+
+```python
+texts = ["Hello world", "Goodbye world"]
+embeddings = GeminiEmbeddings()
+vectors = embeddings.embed_batch(texts)
+```

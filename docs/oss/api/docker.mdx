@@ -1,0 +1,144 @@
+---
+title: "Docker"
+description: "Deploy the Chonkie API server with Docker and docker-compose"
+sidebarTitle: "Docker"
+icon: "docker"
+---
+
+## Quick Start
+
+```bash
+docker compose up
+```
+
+The API is available at `http://localhost:8000`. Visit `/docs` for the interactive Swagger UI.
+
+## docker-compose.yml
+
+The repository ships with a ready-to-use `docker-compose.yml`:
+
+```yaml
+services:
+  chonkie-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chonkie-oss-api:latest
+    container_name: chonkie-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-*}"
+      DATABASE_URL: "sqlite+aiosqlite:////app/data/chonkie.db"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      COHERE_API_KEY: "${COHERE_API_KEY:-}"
+      VOYAGE_API_KEY: "${VOYAGE_API_KEY:-}"
+      MISTRAL_API_KEY: "${MISTRAL_API_KEY:-}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+```
+
+The `./data` volume mount persists the SQLite database (`chonkie.db`) across container restarts.
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_LEVEL` | `INFO` | Log verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `CORS_ORIGINS` | `*` | Comma-separated allowed origins. Use `*` to allow all. |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./data/chonkie.db` | SQLite database path. Override for custom locations. |
+| `OPENAI_API_KEY` | _(empty)_ | For OpenAI embeddings (`text-embedding-3-small`, etc.) |
+| `COHERE_API_KEY` | _(empty)_ | For Cohere embeddings (`embed-english-v3.0`, etc.) |
+| `VOYAGE_API_KEY` | _(empty)_ | For Voyage AI embeddings (`voyage-large-2`, etc.) |
+| `MISTRAL_API_KEY` | _(empty)_ | For Mistral embeddings (`mistral-embed`) |
+
+Pass them inline:
+
+```bash
+LOG_LEVEL=DEBUG CORS_ORIGINS=https://myapp.com docker compose up
+```
+
+Or create a `.env` file in the project root:
+
+```bash
+LOG_LEVEL=INFO
+CORS_ORIGINS=https://myapp.com,https://api.myapp.com
+# Set your preferred embedding provider key:
+OPENAI_API_KEY=sk-...
+# COHERE_API_KEY=...
+# VOYAGE_API_KEY=...
+```
+
+## Build and Run Without Compose
+
+```bash
+# Build the image
+docker build -t chonkie-oss-api .
+
+# Run the container
+docker run -p 8000:8000 chonkie-oss-api
+
+# With environment variables
+docker run -p 8000:8000 \
+  -e LOG_LEVEL=DEBUG \
+  -e OPENAI_API_KEY=sk-... \
+  chonkie-oss-api
+```
+
+## Image Details
+
+The Dockerfile uses a multi-stage build to keep the final image lean:
+
+- **Builder stage** — installs `chonkie[api,semantic,code,openai]` into a virtual environment
+- **Runtime stage** — copies only the venv; runs as a non-root `chonkie` user
+- **Exposed port** — `8000`
+- **Health check** — HTTP GET to `/health` every 30 seconds
+
+## Production Tips
+
+**Restrict CORS** — in production, replace `*` with your actual domains:
+
+```bash
+CORS_ORIGINS=https://myapp.com,https://admin.myapp.com docker compose up
+```
+
+**Add a reverse proxy** — put Nginx or Caddy in front for TLS termination and rate limiting:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name api.myapp.com;
+
+    location / {
+        proxy_pass http://chonkie-api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+**Scale horizontally** — run multiple replicas behind a load balancer:
+
+```yaml
+services:
+  chonkie-api:
+    image: chonkie-oss-api:latest
+    deploy:
+      replicas: 3
+    ports:
+      - "8000:8000"
+```
+
+<Note>
+  The `SemanticChunker` loads its embedding model on first use. Send a warm-up request after startup to avoid cold-start latency on the first real request in production.
+</Note>

@@ -1,0 +1,146 @@
+---
+title: Milvus Handshake
+sidebarTitle: Milvus Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a Milvus collection.
+---
+
+The `MilvusHandshake` class provides seamless integration between Chonkie's chunking system and Milvus, a powerful, open-source vector database.
+
+Embed and store your Chonkie chunks in a Milvus collection, with automatic schema and index creation, without ever leaving the Chonkie SDK.
+
+## Installation
+
+Before using the Milvus handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[milvus]
+```
+
+## Basic Usage
+
+### Initialization
+<CodeGroup>
+
+```python Initialize for a Local Instance
+from chonkie import MilvusHandshake
+
+# Connects to Milvus at http://localhost:19530 by default
+handshake = MilvusHandshake()
+```
+
+```python Initialize using a URI
+from chonkie import MilvusHandshake
+
+# Recommended for connecting to remote or secured instances
+handshake = MilvusHandshake(
+    uri=os.getenv("MILVUS_URI"),
+    user=os.getenv("MILVUS_USER"),
+    api_key=os.getenv("MILVUS_API_KEY"),
+    collection_name="test_collection",
+)
+```
+
+</CodeGroup>
+
+### Parameters
+
+<ParamField
+    path="collection_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    The name of the Milvus collection to use. If "random", a unique name is generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    The embedding model to use for creating vectors.
+</ParamField>
+
+<ParamField
+    path="uri"
+    type="Optional[str]"
+    default="None"
+>
+    The full URI to connect to Milvus. This is the preferred method for specifying connection details.
+</ParamField>
+
+<ParamField
+    path="host"
+    type="str"
+    default="localhost"
+>
+    The host of the Milvus instance. Used if `uri` is not provided.
+</ParamField>
+
+<ParamField
+    path="port"
+    type="str"
+    default="19530"
+>
+    The port of the Milvus instance. Used if `uri` is not provided.
+</ParamField>
+
+<ParamField
+    path="alias"
+    type="str"
+    default="default"
+>
+    The connection alias to use for this Milvus connection.
+</ParamField>
+
+### Writing Chunks to Milvus
+
+```python
+from chonkie import MilvusHandshake, SentenceChunker
+
+# Initialize the handshake for your deployment
+handshake = MilvusHandshake(
+    uri="http://localhost:19530",
+    collection_name="my_documents",
+)
+
+# Create some chunks
+chunker = SentenceChunker()
+chunks = chunker.chunk("Milvus stores data in collections. Chonkie makes ingestion easy!")
+
+# Write chunks to the Milvus collection
+handshake.write(chunks)
+```
+
+### Searching Chunks in Milvus
+
+You can retrieve the most similar chunks from your Milvus collection using the `search` method.
+
+<CodeGroup>
+```python Search using a Text Query
+from chonkie import MilvusHandshake
+
+# Initialize the handshake to connect to your collection
+handshake = MilvusHandshake(
+    uri="http://localhost:19530",
+    collection_name="my_documents",
+)
+
+results = handshake.search(query="easy data ingestion", limit=2)
+```
+```python Search using an Embedding Vector
+from chonkie import MilvusHandshake
+
+# Initialize the handshake
+handshake = MilvusHandshake(
+    uri="http://localhost:19530",
+    collection_name="my_documents",
+)
+
+# Generate an embedding vector for your query
+embedding = handshake.embedding_model.embed("easy data ingestion")
+
+results = handshake.search(embedding=embedding, limit=2)
+```
+</CodeGroup>

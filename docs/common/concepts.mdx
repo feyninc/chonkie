@@ -1,0 +1,81 @@
+---
+title: Concepts
+description: Common concepts of Chonkie
+icon: "book"
+iconType: "solid"
+---
+
+This page outlines some common concepts of Chonkie, that will help you understand how to use Chonkie effectively.
+
+## What are Chonkie's core values?
+
+Chonkie is a very opinionated library, and it all stems from innate human mortality. We are all going to die one day, and we have no reason to waste time figuring out how to chunk documents. Just use Chonkie.
+
+Chonkie needs to be and always adheres to be:
+
+- **Simple**: We care about how simple it is to use Chonkie. No brainer. 
+- **Fast**: We care about your latency. No time to waste. 
+- **Lightweight**: We care about your memory. No space to waste. 
+- **Flexible**: We care about your customization needs. Hassle free. 
+
+Chonkie just works. It's that simple. 
+
+## What is chunking? What is an ideal chunk and chunker?
+
+Chunking is the process of breaking down a text into smaller, more manageable pieces, that can be used for RAG applications. 
+
+An ideal chunk is one that is:
+
+- **Reconstructable**: A chunk should be part of the whole text, such that combining chunks should give you the original text back. 
+- **Independent**: It should be a standalone unit tackling only one idea, i.e., removing it from the chunk should not remove important information from the original text.
+- **Sufficient**: It should be long enough to be meaningful, i.e., it should contain enough information to be useful.
+
+As a consequence, an (ideal) chunker is one that:
+
+- Breaks down the text into chunks that are reconstructable, independent and sufficient.
+- Is deterministic, i.e., given the same text, it should always return the same chunks.
+- Is efficient, i.e., it should be fast and lightweight.
+
+This is how Chonkie's chunkers are designed to be. Understanding this will help you understand why Chonkie divides the chunking process into multiple stages: Pre-processing, chunking and post-processing.
+
+## Is chunking necessary? Can't I just use the entire document as a chunk? 
+
+Nope. Here’s why chunking is absolutely essential:  
+
+#### 1. **Limited Context Windows**  
+All models have a limit on how much text they can process at once. 
+This is referred to as their "context window". 
+Chunking breaks down large documents into manageable pieces that fit within these limits.  
+
+#### 2. **Computational Efficiency**  
+Processing a 100GB document every time you make a query? Bad idea. 
+Attention mechanisms, even when optimized, are computationally expensive (`O(n)`). 
+Chunking keeps things efficient and memory-friendly.  
+
+#### 3. **Better Representation**  
+As mentioned earlier, chunks represent each idea as an independent entity. 
+Not chunking your document will likely cause your model to conflate concepts and get confused. 
+Representation models use lossy compression, so keeping chunks concise ensures the model understands the context better.  
+
+#### 4. **Reduced Hallucination**  
+Feeding too much context at once makes models hallucinate. 
+They start using irrelevant information to answer queries, and that’s a **big** no-no. 
+Smaller, focused chunks reduce this risk.  
+
+All of this makes chunking a **must-have** for RAG applications. Don't get caught using your whole document as a single chunk! 
+
+## How is Chonkie so fast? What is the secret sauce? 
+
+Chonkie is fast because it cares about your latency. Chonkie is raised with love, care, and strong beliefs that the speed of light should be the only limit to your RAG applications. 
+
+Of course, we do a lot of optimizations under the hood to make sure that Chonkie is as fast as it gets. Here are some of the things we do:
+
+- **Pipelining**: We use a pipelining approach to process the document, so as to make stronger heuristics for chunking. This allows to have a faster chunking process, without compromising on the quality of chunks.
+- **Caching and Pre-computation**: We cache the results of the chunking process, so as to avoid re-computation. This allows to have a faster chunking process, without compromising on the quality of chunks.
+- **Smart Token Estimate-Validate feedback Loops**: We use a token estimate-validate feedback loops to make sure that we have near optimal chunk sizes, while bypassing some of the inefficiencies of the tokenizers.
+- **Faster Tokenizers**: We use a faster tokenizer, [tiktoken](https://github.com/openai/tiktoken), which is faster and more efficient than the default tokenizer. Tiktoken by default does not support all model types, so we use a wrapper around it, AutoTikTokenizer which adds support for all HF models.
+- **Ultra-fast embedding**: By default, Chonkie uses Static Embeddings from Model2Vec, which are ultra-fast and lightweight. Static Embeddings are pre-computed and stored in a lookup table, so as to avoid the overhead of running an embedding model at query time.
+- **Parallel Processing**: We use parallel processing to process the document in parallel, so as to make better use of the available resources. This allows to have a faster chunking process, without compromising on the quality of chunks.
+
+All these optimizations allow Chonkie to process documents at the speed of light, without compromising on the quality of chunks. So, the next time you want to process a large document, remember to use Chonkie!
+

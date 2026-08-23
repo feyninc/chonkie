@@ -1,0 +1,133 @@
+---
+title: Logging
+description: Control Chonkie's log output
+icon: "terminal"
+iconType: "solid"
+---
+
+By default, Chonkie logs warnings and errors. You can control what gets logged using the `CHONKIE_LOG` environment variable or configure it programmatically.
+
+## Quick Setup
+
+Set the `CHONKIE_LOG` environment variable before importing chonkie:
+
+```bash
+export CHONKIE_LOG=debug  # Show everything
+export CHONKIE_LOG=info   # Show info, warnings, and errors
+export CHONKIE_LOG=warning # Show warnings and errors (default)
+export CHONKIE_LOG=error  # Show only errors
+export CHONKIE_LOG=off    # Disable all logging
+```
+
+## Programmatic Configuration
+
+Configure logging from your Python code:
+
+```python
+import chonkie
+
+# Enable debug logging
+chonkie.logger.configure("debug")
+
+# Disable logging completely
+chonkie.logger.configure("off")
+
+# Back to warnings and errors
+chonkie.logger.configure("warning")
+```
+
+## Log Levels
+
+- `debug` - Everything (chunker initialization, text processing, chunk counts)
+- `info` - High-level operations (chunk creation, file operations)
+- `warning` - Potential issues (default)
+- `error` - Only errors
+- `off` - Silent
+
+## Custom Format
+
+Change the log format to suit your needs:
+
+<Tabs>
+  <Tab title="Default">
+    ```python
+    import chonkie
+    chonkie.logger.configure("info")
+    ```
+
+    Output:
+    ```
+    2025-11-13 14:18:58,714 | INFO | chonkie.chunker.token:chunk:143 - Created 5 chunks
+    ```
+  </Tab>
+
+  <Tab title="Simple">
+    ```python
+    import chonkie
+    chonkie.logger.configure("info", format="%(levelname)s - %(message)s")
+    ```
+
+    Output:
+    ```
+    INFO - Created 5 chunks
+    ```
+  </Tab>
+
+  <Tab title="Minimal">
+    ```python
+    import chonkie
+    chonkie.logger.configure("info", format="%(message)s")
+    ```
+
+    Output:
+    ```
+    Created 5 chunks
+    ```
+  </Tab>
+
+  <Tab title="Detailed">
+    ```python
+    import chonkie
+    chonkie.logger.configure("info", format="[%(name)s] %(levelname)s: %(message)s")
+    ```
+
+    Output:
+    ```
+    [chonkie.chunker.token] INFO: Created 5 chunks
+    ```
+  </Tab>
+
+  <Tab title="Structured">
+    ```python
+    import chonkie
+    import logging
+
+    # Custom formatter that includes extra fields
+    class StructuredFormatter(logging.Formatter):
+        def format(self, record):
+            msg = super().format(record)
+            # Add any extra fields
+            extras = []
+            for key in ['chunk_count', 'tokens']:
+                if hasattr(record, key):
+                    extras.append(f"{key}={getattr(record, key)}")
+            if extras:
+                msg += f" [{', '.join(extras)}]"
+            return msg
+
+    # Apply custom formatter
+    logger = logging.getLogger("chonkie")
+    handler = logging.StreamHandler()
+    handler.setFormatter(StructuredFormatter("%(levelname)s - %(message)s"))
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    ```
+
+    Output:
+    ```
+    INFO - Created chunks [chunk_count=5, tokens=128]
+    ```
+  </Tab>
+</Tabs>
+
+That's it. Logging is simple and stays out of your way.

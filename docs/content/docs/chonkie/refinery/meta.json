@@ -1,9 +1,0 @@
-{
-  "title": "Refinery",
-  "icon": "Sparkles",
-  "pages": [
-    "overview",
-    "overlap-refinery",
-    "embeddings-refinery"
-  ]
-}
