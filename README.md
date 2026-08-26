@@ -15,11 +15,11 @@
 
 _The lightweight ingestion library for fast, efficient and robust RAG pipelines_
 
-[Installation](#📦-installation) •
-[Usage](#🚀-usage) •
-[Chunkers](#✂️-chunkers) •
-[Integrations](#🔌-integrations) •
-[Benchmarks](#📊-benchmarks)
+[Installation](#-installation) •
+[Usage](#-usage) •
+[Chunkers](#%EF%B8%8F-chunkers) •
+[Integrations](#-integrations) •
+[Benchmarks](#-benchmarks)
 
 </div>
 
@@ -30,11 +30,11 @@ Tired of making your gazillionth chunker? Sick of the overhead of large librarie
 **✨ Easy to use**: Install, Import, CHONK </br>
 **⚡ Fast**: CHONK at the speed of light! zooooom </br>
 **🪶 Light-weight**: No bloat, just CHONK </br>
-**🔌 32+ [integrations](#integrations)**: Works with your favorite tools and vector DBs out of the box! </br>
+**🔌 32+ [integrations](#-integrations)**: Works with your favorite tools and vector DBs out of the box! </br>
 **💬 ️Multilingual**: Out-of-the-box support for 56 languages </br>
 **☁️ Cloud-Friendly**: CHONK locally or in the [Cloud](https://labs.chonkie.ai) </br>
 **🦛 Cute CHONK mascot**: psst it's a pygmy hippo btw </br>
-**❤️ [Moto Moto](#acknowledgements)'s favorite python library** </br>
+**❤️ [Moto Moto](#-acknowledgements)'s favorite python library** </br>
 
 **Chonkie** is a chunking library that "**just works**" ✨
 
