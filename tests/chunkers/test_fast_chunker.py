@@ -295,6 +295,29 @@ def test_fast_chunker_unicode_text() -> None:
     assert reconstructed == text
 
 
+def test_fast_chunker_multibyte_split_boundary() -> None:
+    """Test that a size cut inside a multi-byte UTF-8 char does not raise.
+
+    chonkie-core returns byte offsets, and a hard size cut can fall inside a
+    multi-byte character. Slicing the raw bytes there used to raise
+    UnicodeDecodeError; offsets are now snapped to character boundaries.
+    """
+    # chunk_size=2 forces cuts inside every 2-byte "é"; no delimiter is present.
+    text = "café café café café "
+    chunker = get_fast_chunker(chunk_size=2)
+    chunks = chunker.chunk(text)
+
+    assert len(chunks) > 0
+    reconstructed = "".join(chunk.text for chunk in chunks)
+    assert reconstructed == text
+    assert all(chunk.text == text[chunk.start_index : chunk.end_index] for chunk in chunks)
+
+    # A run of 3-byte CJK characters longer than a realistic chunk_size.
+    cjk = "这是一段没有分隔符的中文文本" * 20
+    cjk_chunks = get_fast_chunker(chunk_size=64).chunk(cjk)
+    assert "".join(chunk.text for chunk in cjk_chunks) == cjk
+
+
 def test_fast_chunker_no_tokenizer_attribute() -> None:
     """Test that FastChunker has _tokenizer set to None."""
     chunker = get_fast_chunker()
