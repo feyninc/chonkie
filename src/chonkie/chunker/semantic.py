@@ -395,6 +395,42 @@ class SemanticChunker(BaseChunker):
 
         return groups
 
+    def _split_oversized_sentence(self, sentence: Sentence) -> list[Sentence]:
+        """Split a single sentence that exceeds chunk_size into token-sized pieces.
+
+        A sentence longer than chunk_size can never fit into any group, so grouping
+        alone cannot enforce the limit. We split its text at the token level, the same
+        way TokenChunker does, so no resulting piece exceeds chunk_size.
+
+        Args:
+            sentence: A sentence whose token_count exceeds chunk_size
+
+        Returns:
+            List of sentences, each with token_count <= chunk_size
+
+        """
+        tokens = self.tokenizer.encode(sentence.text)
+        token_groups = [
+            tokens[i : i + self.chunk_size] for i in range(0, len(tokens), self.chunk_size)
+        ]
+
+        pieces = []
+        current_start = sentence.start_index
+        for group in token_groups:
+            # Decode one group at a time: decode() is part of the tokenizer
+            # protocol, decode_batch() is not guaranteed for custom tokenizers.
+            text = self.tokenizer.decode(group)
+            pieces.append(
+                Sentence(
+                    text=text,
+                    start_index=current_start,
+                    end_index=current_start + len(text),
+                    token_count=len(group),
+                )
+            )
+            current_start += len(text)
+        return pieces
+
     def _split_groups(self, groups: list[list[Sentence]]) -> list[list[Sentence]]:
         """Split groups that exceed chunk_size into smaller groups.
 
@@ -418,14 +454,23 @@ class SemanticChunker(BaseChunker):
                 current_token_count = 0
 
                 for sentence in group:
-                    if current_token_count + sentence.token_count <= self.chunk_size:
-                        current_group.append(sentence)
-                        current_token_count += sentence.token_count
-                    else:
-                        if current_group:
-                            final_groups.append(current_group)
-                        current_group = [sentence]
-                        current_token_count = sentence.token_count
+                    # A single sentence larger than chunk_size can't fit in any
+                    # group, so split it into token-sized pieces first.
+                    pieces = (
+                        self._split_oversized_sentence(sentence)
+                        if sentence.token_count > self.chunk_size
+                        else [sentence]
+                    )
+
+                    for piece in pieces:
+                        if current_token_count + piece.token_count <= self.chunk_size:
+                            current_group.append(piece)
+                            current_token_count += piece.token_count
+                        else:
+                            if current_group:
+                                final_groups.append(current_group)
+                            current_group = [piece]
+                            current_token_count = piece.token_count
 
                 if current_group:
                     final_groups.append(current_group)
@@ -465,18 +510,10 @@ class SemanticChunker(BaseChunker):
 
         # Handle edge cases - too few sentences
         if len(sentences) <= self.similarity_window:
-            # If we have any sentences, return them as a single chunk
+            # If we have any sentences, group them together, still enforcing
+            # chunk_size so a few large sentences don't produce an oversized chunk.
             if sentences:
-                text = "".join([s.text for s in sentences])
-                token_count = sum([s.token_count for s in sentences])
-                return [
-                    Chunk(
-                        text=text,
-                        start_index=0,
-                        end_index=len(text),
-                        token_count=token_count,
-                    ),
-                ]
+                return self._create_chunks(self._split_groups([sentences]))
             else:
                 return []
 

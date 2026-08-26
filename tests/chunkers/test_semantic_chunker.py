@@ -75,6 +75,63 @@ def test_semantic_chunker_chunking(embedding_model: BaseEmbeddings, sample_text:
     assert all([chunk.end_index is not None for chunk in chunks])
 
 
+def test_semantic_chunker_oversized_single_sentence(embedding_model: BaseEmbeddings) -> None:
+    """A single sentence longer than chunk_size must still be split to respect the limit.
+
+    Regression test for #222: a sentence with no delimiters that exceeds chunk_size
+    was emitted as one oversized chunk because grouping only splits between sentences.
+    """
+    chunk_size = 100
+    chunker = SemanticChunker(
+        embedding_model=embedding_model,
+        chunk_size=chunk_size,
+        threshold=0.5,
+        min_sentences_per_chunk=1,
+    )
+
+    # One long run of words with no sentence delimiters => a single "sentence"
+    # far larger than chunk_size, surrounded by normal sentences.
+    normal = "This is a normal sentence. Here is another one. And a third here. A fourth now. "
+    oversized = "word " * 800
+    text = normal + oversized + ". " + normal
+
+    chunks = chunker.chunk(text)
+
+    assert len(chunks) > 0
+    assert all([chunk.token_count <= chunk_size for chunk in chunks]), (
+        "Every chunk must respect chunk_size even when a single sentence is oversized"
+    )
+    # Guard against token_count being underreported: re-tokenize the actual text.
+    assert all([chunker.tokenizer.count_tokens(chunk.text) <= chunk_size for chunk in chunks]), (
+        "The tokenized chunk text must also stay within chunk_size"
+    )
+
+
+def test_semantic_chunker_oversized_sentence_below_similarity_window(
+    embedding_model: BaseEmbeddings,
+) -> None:
+    """The few-sentences early-return path must also enforce chunk_size (#222)."""
+    chunk_size = 100
+    chunker = SemanticChunker(
+        embedding_model=embedding_model,
+        chunk_size=chunk_size,
+        threshold=0.5,
+        similarity_window=3,
+    )
+
+    # Fewer sentences than similarity_window, but one is far larger than chunk_size.
+    text = "Short intro. " + ("word " * 600)
+    chunks = chunker.chunk(text)
+
+    assert len(chunks) > 1
+    assert all([chunk.token_count <= chunk_size for chunk in chunks]), (
+        "The few-sentences path must also split oversized sentences"
+    )
+    assert all([chunker.tokenizer.count_tokens(chunk.text) <= chunk_size for chunk in chunks]), (
+        "The tokenized chunk text must also stay within chunk_size"
+    )
+
+
 def test_semantic_chunker_empty_text(embedding_model: BaseEmbeddings) -> None:
     """Test that the SemanticChunker can handle empty text input."""
     chunker = SemanticChunker(
