@@ -332,6 +332,16 @@ genie = OpenAIGenie(model="meta-llama/llama-4-maverick",
                     api_key="your_api_key")
 ```
 
+Or, here's how to use the `OpenAIGenie` to interact with the `gpt-4o-mini` model via Requesty:
+
+```python
+from chonkie import OpenAIGenie
+
+genie = OpenAIGenie(model="openai/gpt-4o-mini",
+                    base_url="https://router.requesty.ai/v1",
+                    api_key="your_api_key")
+```
+
 </details>
 
 <details>
