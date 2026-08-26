@@ -1003,3 +1003,56 @@ def test_overlap_refinery_justified_inplace_false() -> None:
     assert refined_chunks[0].context != ""
     assert refined_chunks[1].context != ""
     assert refined_chunks[2].context != ""
+
+
+def test_overlap_refinery_float_context_rounds_to_zero_recursive_suffix() -> None:
+    """A float context_size that rounds down to zero tokens must not crash.
+
+    int(0.25 * token_count) == 0 for a chunk of <= 3 tokens. The recursive path
+    previously split with a zero step (range(..., 0)) and raised
+    ValueError: range() arg 3 must not be zero. The correct result is no overlap.
+    """
+    chunks = [
+        Chunk(text="hi there", start_index=0, end_index=8, token_count=2),
+        Chunk(text="bye now", start_index=8, end_index=15, token_count=2),
+    ]
+    refinery = OverlapRefinery(context_size=0.25, mode="recursive", method="suffix", merge=True)
+    refined = refinery.refine(chunks)
+
+    assert len(refined) == 2
+    # No overlap fits, so the first chunk keeps its exact text and the context is empty.
+    assert refined[0].context == ""
+    assert refined[0].text == "hi there"
+
+
+def test_overlap_refinery_float_context_rounds_to_zero_recursive_prefix() -> None:
+    """The recursive prefix path must also degrade to no overlap, not crash."""
+    chunks = [
+        Chunk(text="hi there", start_index=0, end_index=8, token_count=2),
+        Chunk(text="bye now", start_index=8, end_index=15, token_count=2),
+    ]
+    refinery = OverlapRefinery(context_size=0.25, mode="recursive", method="prefix", merge=True)
+    refined = refinery.refine(chunks)
+
+    assert len(refined) == 2
+    assert refined[1].context == ""
+    assert refined[1].text == "bye now"
+
+
+def test_overlap_refinery_float_context_rounds_to_zero_token_prefix_no_duplication() -> None:
+    """Token prefix with a zero-rounded context must not duplicate the whole chunk.
+
+    tokens[-0:] equals tokens[:] (the entire chunk), so the previous chunk was
+    copied wholesale into the next chunk as "overlap". Zero tokens means no overlap.
+    """
+    chunks = [
+        Chunk(text="hi there", start_index=0, end_index=8, token_count=2),
+        Chunk(text="bye now", start_index=8, end_index=15, token_count=2),
+    ]
+    refinery = OverlapRefinery(context_size=0.25, mode="token", method="prefix", merge=True)
+    refined = refinery.refine(chunks)
+
+    assert len(refined) == 2
+    assert refined[1].context == ""
+    # The previous chunk's text must NOT be prepended.
+    assert refined[1].text == "bye now"
