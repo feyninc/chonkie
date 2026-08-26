@@ -14,7 +14,8 @@ def _read_markdown_table(table_content: str):
         ) from e
 
     lines = [line.strip("|").strip() for line in table_content.split("\n") if line.strip()]
-    if len(lines) < 2:
+    # Empty/blank headers (incl. multi-col "| | | |") yield EmptyDataError from pandas.
+    if len(lines) < 2 or not lines[0].replace("|", "").strip():
         return pd.DataFrame()
 
     csv_content = "\n".join([lines[0]] + lines[2:])
