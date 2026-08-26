@@ -144,24 +144,34 @@ class TableChunker(BaseChunker):
                     ),
                 ]
             else:
-                # Track character position for data rows (after header)
-                header_len = len(header)
-                current_char_index = header_len
+                # Track character position over the original, unstripped input.
+                # The first span absorbs any prefix before the parsed header, and
+                # the final span absorbs the footer and trailing whitespace so the
+                # spans remain contiguous over the complete table text.
+                header_start = text.find(header)
+                header_span_len = len(header) + (header_start if header_start != -1 else 0)
+                current_char_index = 0
 
                 for i in range(0, len(data_rows), self.chunk_size):
                     chunk_rows = data_rows[i : i + self.chunk_size]
-                    chunk_text = header + "".join(chunk_rows) + footer
-                    data_rows_len = len("".join(chunk_rows))
+                    chunk_rows_text = "".join(chunk_rows)
+                    chunk_text = header + chunk_rows_text + footer
+                    is_last_chunk = i + self.chunk_size >= len(data_rows)
+                    span_len = (
+                        len(text) - current_char_index
+                        if is_last_chunk
+                        else len(chunk_rows_text) + (header_span_len if i == 0 else 0)
+                    )
 
                     chunks.append(
                         Chunk(
                             text=chunk_text,
                             token_count=len(chunk_rows),
                             start_index=current_char_index,
-                            end_index=current_char_index + data_rows_len,
+                            end_index=current_char_index + span_len,
                         ),
                     )
-                    current_char_index += data_rows_len
+                    current_char_index += span_len
 
             return chunks
 

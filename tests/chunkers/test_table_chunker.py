@@ -861,3 +861,35 @@ def test_table_chunker_markdown_document_no_tables_preserves_chunks() -> None:
 
     assert len(result.chunks) == 1
     assert result.chunks[0].text == "Some prose text here."
+
+
+def test_table_chunker_row_tokenizer_indices():
+    table = "| A | B |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n| 5 | 6 |\n| 7 | 8 |"
+    chunker = TableChunker(tokenizer="row", chunk_size=2)
+    chunks = chunker.chunk(table)
+    assert len(chunks) > 1
+    # First chunk must start at 0 (matches the character path and every other chunker).
+    assert chunks[0].start_index == 0
+    # Spans are contiguous and reconstruct the full table (no lost/duplicated regions).
+    for i in range(len(chunks) - 1):
+        assert chunks[i].end_index == chunks[i + 1].start_index
+    assert chunks[-1].end_index == len(table)
+    assert "".join(table[c.start_index : c.end_index] for c in chunks) == table
+
+
+def test_table_chunker_row_tokenizer_html_indices_cover_full_input() -> None:
+    table = (
+        "  <table><thead><tr><th>A</th></tr></thead><tbody>"
+        "<tr><td>1</td></tr><tr><td>2</td></tr><tr><td>3</td></tr>"
+        "</tbody></table>\n"
+    )
+    chunker = TableChunker(tokenizer="row", chunk_size=1)
+
+    chunks = chunker.chunk(table)
+
+    assert len(chunks) == 3
+    assert chunks[0].start_index == 0
+    for current, following in zip(chunks, chunks[1:]):
+        assert current.end_index == following.start_index
+    assert chunks[-1].end_index == len(table)
+    assert "".join(table[chunk.start_index : chunk.end_index] for chunk in chunks) == table
