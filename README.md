@@ -413,3 +413,10 @@ If you use Chonkie in your research, please cite it as follows:
   howpublished = {\url{https://github.com/chonkie-inc/chonkie}},
 }
 ```
+
+
+## 🚀 Performance Tips
+
+- Use `FastChunker` for maximum throughput (100+ GB/s)
+- Use `SemanticChunker` for quality results on small documents
+- Combine with async operations for batch processing
