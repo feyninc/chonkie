@@ -56,6 +56,13 @@ class TokenChunker(BaseChunker):
         self.chunk_overlap = (
             chunk_overlap if isinstance(chunk_overlap, int) else int(chunk_overlap * chunk_size)
         )
+        # Validate the COMPUTED overlap, not just the int input: a float chunk_overlap >= 1.0
+        # is turned into int(chunk_overlap * chunk_size), which can be >= chunk_size and was
+        # skipped by the int-only guard above. That makes the step (chunk_size - chunk_overlap)
+        # zero or negative, so range() yields nothing and chunk() silently returns [] - the
+        # whole document is dropped. Enforce the docstring's contract for ints and floats alike.
+        if self.chunk_overlap >= self.chunk_size or self.chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be >= 0 and less than chunk_size")
 
         self._use_multiprocessing = False
 
