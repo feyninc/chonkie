@@ -1,5 +1,7 @@
 # 🦛 Contributing to Chonkie
 
+> **PRs are frozen.** We're building Chonkie v2. v1.7 is the last 1.x release; fixes go into 2.0. New pull requests on `main` will be closed automatically until v2 is stable. Please bear with us.
+
 > "I like them big, I like them CONTRIBUTING" ~ Moto Moto, probably
 
 Welcome fellow CHONKer! We're thrilled you want to contribute to Chonkie. Every contribution—whether fixing bugs, adding features, or improving documentation—makes Chonkie better for everyone.
@@ -9,7 +11,7 @@ Welcome fellow CHONKer! We're thrilled you want to contribute to Chonkie. Every 
 ### Before You Dive In
 
 1. **Check existing issues** or open a new one to start a discussion
-2. **Read [Chonkie's documentation](https://docs.chonkie.ai)** and core [concepts](https://docs.chonkie.ai/getting-started/concepts)
+2. **Read [Chonkie's documentation](https://docs.chonkie.ai)** and core [concepts](https://docs.chonkie.ai/common/concepts)
 3. **Set up your development environment** using the guide below
 
 ### Development Setup

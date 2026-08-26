@@ -111,7 +111,7 @@ class TestSlumberChunkerInitialization:
 
         chunker = SlumberChunker(
             genie=mock_genie,
-            tokenizer="cl100k_base",
+            tokenizer="gpt2",
             chunk_size=2048,
             rules=custom_rules,
             candidate_size=256,
@@ -478,7 +478,7 @@ class TestSlumberChunkerEdgeCases:
         mock_genie = MockGenie([1])
 
         # Test with different tokenizer
-        chunker = SlumberChunker(genie=mock_genie, tokenizer="cl100k_base", verbose=False)
+        chunker = SlumberChunker(genie=mock_genie, tokenizer="gpt2", verbose=False)
 
         chunks = chunker.chunk(sample_text)
         assert len(chunks) >= 1

@@ -1,0 +1,475 @@
+---
+title: "Token Chunker"
+description: "Split text into fixed-size token chunks with configurable overlap"
+icon: "scissors"
+---
+
+The `TokenChunker` splits text into chunks based on token count, ensuring each chunk stays within specified token limits.
+
+## API Reference
+
+To use the `TokenChunker` via the API, check out the [API reference documentation](../../api/chunkers/token-chunker).
+
+## Installation
+
+TokenChunker is included in the base installation of Chonkie.
+
+<Info>
+  If you would like to use custom tokenizers in JavaScript, please install the
+  `@chonkiejs/token` library
+</Info>
+
+## Initialization
+
+<CodeGroup>
+```python Python
+from chonkie import TokenChunker
+
+# Basic initialization with default parameters
+
+chunker = TokenChunker(
+tokenizer="character", # Default tokenizer (or use "gpt2", etc.)
+chunk_size=2048, # Maximum tokens per chunk
+chunk_overlap=128 # Overlap between chunks
+)
+
+# Using a custom tokenizer
+
+from tokenizers import Tokenizer
+custom_tokenizer = Tokenizer.from_pretrained("your-tokenizer")
+chunker = TokenChunker(
+tokenizer=custom_tokenizer,
+chunk_size=2048,
+chunk_overlap=128
+)
+
+````
+
+```javascript JavaScript
+import { TokenChunker } from "@chonkiejs/core";
+
+// Create a chunker
+let chunker = await TokenChunker.create({
+  chunkSize: 2048,
+  chunkOverlap: 128,
+});
+
+// Using a custom tokenizer
+// NOTE: Requires installation of `@chonkiejs/token`
+chunker = TokenChunker.create({
+  tokenizer: "gpt2",
+  chunkSize: 2048,
+  chunkOverlap: 512
+});
+```
+
+</CodeGroup>
+
+## Parameters
+
+<ParamField path="tokenizer" type="Union[str, Any]" default="character">
+  Tokenizer to use. Can be a string identifier ("character", "word", "byte", "gpt2",
+  etc.) or a tokenizer instance
+</ParamField>
+
+<ParamField path="chunk_size / chunkSize" type="int" default="2048">
+  Maximum number of tokens per chunk
+</ParamField>
+
+<ParamField path="chunk_overlap / chunkOverlap" type="Union[int, float]" default="0">
+  Number or percentage of overlapping tokens between chunks
+</ParamField>
+
+## Basic Usage
+
+<CodeGroup>
+```python Python
+from chonkie import TokenChunker
+
+# Initialize the chunker
+chunker = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=512,
+    chunk_overlap=50
+)
+
+# Chunk your text
+text = "Your long document text here..."
+chunks = chunker.chunk(text)
+
+# Access chunk information
+for chunk in chunks:
+    print(f"Chunk: {chunk.text[:50]}...")
+    print(f"Tokens: {chunk.token_count}")
+```
+
+```javascript JavaScript
+import { TokenChunker } from "@chonkiejs/core";
+
+// Create a chunker
+const chunker = await TokenChunker.create({
+  chunkSize: 512,
+  chunkOverlap: 128,
+});
+
+// Chunk your text
+const chunks = await chunker.chunk("Your text here...");
+
+// Access chunk information
+for (const chunk of chunks) {
+  console.log(chunk.text);
+  console.log(`Tokens: ${chunk.tokenCount}`);
+}
+```
+</CodeGroup>
+
+## Examples
+
+<AccordionGroup>
+
+<Accordion title="Single Text Chunking">
+
+<CodeGroup>
+
+```python Python
+from chonkie import TokenChunker
+
+# Create a chunker with specific parameters
+chunker = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=1024,
+    chunk_overlap=128
+)
+
+text = """Natural language processing has revolutionized how we interact with computers.
+Machine learning models can now understand context, generate text, and even translate
+between languages with remarkable accuracy. This transformation has enabled applications
+ranging from virtual assistants to automated content generation."""
+
+# Chunk the text
+chunks = chunker.chunk(text)
+
+# Process each chunk
+for i, chunk in enumerate(chunks):
+    print(f"\n--- Chunk {i+1} ---")
+    print(f"Text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}")
+    print(f"Start index: {chunk.start_index}")
+    print(f"End index: {chunk.end_index}")
+```
+
+```javascript JavaScript
+import { TokenChunker } from "@chonkiejs/core";
+
+// Create a chunker with specific parameters
+const chunker = await TokenChunker.create({
+  chunkSize: 1024,
+  chunkOverlap: 128,
+});
+
+const text = `Natural language processing has revolutionized how we interact with computers.
+Machine learning models can now understand context, generate text, and even translate
+between languages with remarkable accuracy. This transformation has enabled applications
+ranging from virtual assistants to automated content generation.`;
+
+// Chunk the text
+const chunks = await chunker.chunk(text);
+
+// Process each chunk
+for (let i = 0; i < chunks.length; i++) {
+  const chunk = chunks[i];
+  console.log(`\n--- Chunk ${i + 1} ---`);
+  console.log(`Text: ${chunk.text}`);
+  console.log(`Token count: ${chunk.tokenCount}`);
+  console.log(`Start index: ${chunk.startIndex}`);
+  console.log(`End index: ${chunk.endIndex}`);
+}
+```
+
+</CodeGroup>
+
+</Accordion>
+
+<Accordion title="Batch Processing">
+
+<Note>Batch processing is only supported in Python</Note>
+
+```python
+from chonkie import TokenChunker
+
+# Initialize chunker for batch processing
+chunker = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=512,
+    chunk_overlap=50
+)
+
+# Multiple documents to process
+documents = [
+    "First document about machine learning fundamentals...",
+    "Second document discussing neural networks...",
+    "Third document on natural language processing..."
+]
+
+# Process all documents at once
+batch_chunks = chunker.chunk_batch(documents)
+
+# Iterate through results
+for doc_idx, doc_chunks in enumerate(batch_chunks):
+    print(f"\nDocument {doc_idx + 1}: {len(doc_chunks)} chunks")
+    for chunk in doc_chunks:
+        print(f"  - Chunk: {chunk.text[:50]}... ({chunk.token_count} tokens)")
+```
+
+</Accordion>
+
+<Accordion title="Using Custom Tokenizers">
+
+<Note>Custom tokenizers are only supported in Python. See the Installation section for JavaScript tokenizer support.</Note>
+
+```python
+from chonkie import TokenChunker
+import tiktoken
+
+# Using TikToken with a specific model encoding
+tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 encoding
+chunker = TokenChunker(
+    tokenizer=tokenizer,
+    chunk_size=2048,
+    chunk_overlap=200
+)
+
+# Or using Hugging Face tokenizers
+from transformers import AutoTokenizer
+
+hf_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+chunker = TokenChunker(
+    tokenizer=hf_tokenizer,
+    chunk_size=512,
+    chunk_overlap=50
+)
+
+text = "Your text to chunk with custom tokenizer..."
+chunks = chunker.chunk(text)
+```
+
+</Accordion>
+
+<Accordion title="Callable Interface">
+
+<Note>The callable interface is only supported in Python</Note>
+
+```python
+from chonkie import TokenChunker
+
+# Initialize once
+chunker = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=1024,
+    chunk_overlap=100
+)
+
+# Use as a callable for single text
+single_text = "This is a document that needs chunking..."
+chunks = chunker(single_text)
+print(f"Single text produced {len(chunks)} chunks")
+
+# Use as a callable for multiple texts
+multiple_texts = [
+    "First document text...",
+    "Second document text...",
+    "Third document text..."
+]
+batch_results = chunker(multiple_texts)
+print(f"Processed {len(batch_results)} documents")
+```
+
+</Accordion>
+
+<Accordion title="Overlap Configuration">
+
+<CodeGroup>
+
+```python Python
+from chonkie import TokenChunker
+
+# Fixed token overlap
+chunker_fixed = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=1000,
+    chunk_overlap=100  # Exactly 100 tokens overlap
+)
+
+# Percentage-based overlap
+chunker_percent = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=1000,
+    chunk_overlap=0.1  # 10% overlap (100 tokens for 1000 token chunks)
+)
+
+text = "Long document text that will be chunked with overlap..."
+
+# Compare the results
+fixed_chunks = chunker_fixed.chunk(text)
+percent_chunks = chunker_percent.chunk(text)
+
+print(f"Fixed overlap: {len(fixed_chunks)} chunks")
+print(f"Percentage overlap: {len(percent_chunks)} chunks")
+```
+
+```javascript JavaScript
+import { TokenChunker } from "@chonkiejs/core";
+
+// Fixed token overlap
+const chunkerFixed = await TokenChunker.create({
+  chunkSize: 1000,
+  chunkOverlap: 100, // Exactly 100 tokens overlap
+});
+
+const text = "Long document text that will be chunked with overlap...";
+
+// Compare the results
+const fixedChunks = await chunkerFixed.chunk(text);
+
+console.log(`Fixed overlap (100): ${fixedChunks.length} chunks`);
+```
+
+</CodeGroup>
+
+</Accordion>
+
+<Accordion title="Processing Large Documents">
+
+<CodeGroup>
+
+```python Python
+from chonkie import TokenChunker
+
+# Configure for large documents
+chunker = TokenChunker(
+    tokenizer="gpt2",
+    chunk_size=4096,  # Larger chunks for efficiency
+    chunk_overlap=512  # Maintain context between chunks
+)
+
+# Read a large document
+with open("large_document.txt", "r") as f:
+    large_text = f.read()
+
+# Process efficiently
+chunks = chunker.chunk(large_text)
+
+print(f"Document statistics:")
+print(f"  Original length: {len(large_text)} characters")
+print(f"  Number of chunks: {len(chunks)}")
+print(f"  Average chunk size: {sum(c.token_count for c in chunks) / len(chunks):.1f} tokens")
+
+# Save chunks for further processing
+for i, chunk in enumerate(chunks):
+    with open(f"chunk_{i:03d}.txt", "w") as f:
+        f.write(chunk.text)
+```
+
+```javascript JavaScript
+import { TokenChunker } from "@chonkiejs/core";
+import { readFile, writeFile } from "fs/promises";
+
+// Configure for large documents
+const chunker = await TokenChunker.create({
+  chunkSize: 4096, // Larger chunks for efficiency
+  chunkOverlap: 512, // Maintain context between chunks
+});
+
+// Read a large document
+const largeText = await readFile("large_document.txt", "utf-8");
+
+// Process efficiently
+const chunks = await chunker.chunk(largeText);
+
+console.log("Document statistics:");
+console.log(`  Original length: ${largeText.length} characters`);
+console.log(`  Number of chunks: ${chunks.length}`);
+
+const avgTokenCount =
+  chunks.reduce((sum, c) => sum + c.tokenCount, 0) / chunks.length;
+console.log(`  Average chunk size: ${avgTokenCount.toFixed(1)} tokens`);
+
+// Save chunks for further processing
+for (let i = 0; i < chunks.length; i++) {
+  const filename = `chunk_${i.toString().padStart(3, "0")}.txt`;
+  await writeFile(filename, chunks[i].text);
+}
+```
+
+</CodeGroup>
+
+</Accordion>
+
+</AccordionGroup>
+
+## Supported Tokenizers
+
+<Note>Changing tokenizer backend is only supported on Python </Note>
+
+TokenChunker supports multiple tokenizer backends:
+
+- **TikToken** (Recommended)
+
+  ```python
+  import tiktoken
+  tokenizer = tiktoken.get_encoding("gpt2")
+  ```
+
+- **AutoTikTokenizer**
+
+  ```python
+  from autotiktokenizer import AutoTikTokenizer
+  tokenizer = AutoTikTokenizer.from_pretrained("gpt2")
+  ```
+
+- **Hugging Face Tokenizers**
+
+  ```python
+  from tokenizers import Tokenizer
+  tokenizer = Tokenizer.from_pretrained("gpt2")
+  ```
+
+- **Transformers**
+  ```python
+  from transformers import AutoTokenizer
+  tokenizer = AutoTokenizer.from_pretrained("gpt2")
+  ```
+
+## Return Type
+
+TokenChunker returns chunks as `Chunk` objects.
+
+<CodeGroup>
+```python Python
+@dataclass
+class Chunk:
+    text: str                                           # The chunk text
+    start_index: int                                    # Starting position in original text
+    end_index: int                                      # Ending position in original text
+    token_count: int                                    # Number of tokens in chunk
+    context: Optional[str] = None                       # Optional overlap context text
+    embedding: Union[list[float], "np.ndarray", None] = None  # Optional embedding vector
+```
+
+```javascript JavaScript
+class Chunk {
+    /** The text content of the chunk */
+    text: string;
+    /** The starting index of the chunk in the original text */
+    startIndex: number;
+    /** The ending index of the chunk in the original text */
+    endIndex: number;
+    /** The number of tokens in the chunk */
+    tokenCount: number;
+    /** Optional embedding vector for the chunk */
+    embedding?: number[];
+    /* Get a string representation of the chunk */
+    toString(): string;
+}
+```
+</CodeGroup>

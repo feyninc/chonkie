@@ -1,0 +1,159 @@
+---
+title: Elasticsearch Handshake
+sidebarTitle: Elasticsearch Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into an Elasticsearch index.
+---
+
+The `ElasticHandshake` class provides seamless integration between Chonkie's chunking system and Elasticsearch, allowing you to leverage its powerful vector search capabilities.
+
+Embed and store your Chonkie chunks in an Elasticsearch index without ever leaving the Chonkie SDK. The handshake automatically handles index creation and the necessary vector field mapping.
+
+## Installation
+
+Before using the Elasticsearch handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[elastic]
+```
+
+## Basic Usage
+
+### Initialization
+<CodeGroup>
+```python Initialize for a Local Instance
+from chonkie import ElasticHandshake
+
+# Connects to http://localhost:9200 by default
+handshake = ElasticHandshake()
+```
+
+```python Initialize for Elastic Cloud
+from chonkie import ElasticHandshake
+
+handshake = ElasticHandshake(
+    hosts="YOUR_CLOUD_ID",
+    api_key="YOUR_API_KEY",
+    index_name="my_document_index"
+)
+```
+
+```python Initialize with an Existing Client
+from elasticsearch import Elasticsearch
+from chonkie import ElasticHandshake
+
+# Create and configure your client
+client = Elasticsearch(
+    "https://your-domain.elastic-cloud.com:9243",
+    api_key="YOUR_API_KEY"
+)
+
+handshake = ElasticHandshake(client=client, index_name="my_document_index")
+```
+</CodeGroup>
+
+### Parameters
+
+<ParamField
+    path="client"
+    type="Optional[Elasticsearch]"
+    default="None"
+>
+    An existing `elasticsearch.Elasticsearch` client instance. If not provided, a new client will be created based on other parameters.
+</ParamField>
+
+<ParamField
+    path="index_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the Elasticsearch index to use. If "random", a unique name will be generated.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    The embedding model to use for creating vectors. Can be a model name from Hugging Face or a `BaseEmbeddings` instance.
+</ParamField>
+
+<ParamField
+    path="hosts"
+    type="Optional[Union[str, list[str]]]"
+    default="None"
+>
+    The URL(s) of the Elasticsearch instance(s) to connect to.
+</ParamField>
+
+<ParamField
+    path="cloud_id"
+    type="Optional[str]"
+    default="None"
+>
+    The Cloud ID for connecting to an Elastic Cloud deployment.
+</ParamField>
+
+<ParamField
+    path="api_key"
+    type="Optional[str]"
+    default="None"
+>
+    The API key for authenticating with Elasticsearch, commonly used for Elastic Cloud.
+</ParamField>
+
+
+### Writing Chunks to Elasticsearch
+
+```python
+from chonkie import ElasticHandshake, SentenceChunker
+
+# Initialize the handshake for your deployment
+handshake = ElasticHandshake(
+    cloud_id="YOUR_CLOUD_ID",
+    api_key="YOUR_API_KEY",
+    index_name="my_documents",
+)
+
+# Create some chunks
+chunker = SentenceChunker()
+chunks = chunker.chunk("Chonkie uses the bulk API for efficient indexing. It's fast and reliable!")
+
+# Write chunks to Elasticsearch
+handshake.write(chunks)
+```
+
+### Searching Chunks in Elasticsearch
+
+You can retrieve the most similar chunks from your Elasticsearch index using the `search` method, which performs a k-Nearest Neighbor (kNN) vector search.
+
+<CodeGroup>
+```python Search using a Text Query
+from chonkie import ElasticHandshake
+
+# Initialize the handshake to connect to your index
+handshake = ElasticHandshake(
+    hosts="YOUR_CLOUD_ID",
+    api_key="YOUR_API_KEY",
+    index_name="my_documents",
+)
+
+results = handshake.search(query="fast and efficient indexing", limit=2)
+```
+```python Search using an Embedding Vector
+from chonkie import ElasticHandshake
+
+# Initialize the handshake
+handshake = ElasticHandshake(
+    hosts="YOUR_CLOUD_ID",
+    api_key="YOUR_API_KEY",
+    index_name="my_documents",
+)
+
+# Generate an embedding vector for your query
+embedding = handshake.embedding_model.embed("fast and efficient indexing").tolist()
+
+results = handshake.search(embedding=embedding, limit=2)
+```
+</CodeGroup>

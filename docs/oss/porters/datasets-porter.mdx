@@ -1,0 +1,108 @@
+---
+title: DatasetsPorter
+sidebarTitle: DatasetsPorter
+icon: "file-export"
+iconType: "solid"
+description: Export Chonkie's Chunks into a Hugging Face Dataset.
+---
+
+The `DatasetsPorter` exports a list of `Chunk` objects into a Hugging Face `Dataset` object. This is particularly useful for saving your processed chunks in a standardized format for training models, sharing, or archiving.
+
+## Installation
+
+The `DatasetsPorter` requires the `datasets` library. You can install it with:
+
+```bash
+pip install "chonkie[datasets]"
+```
+
+<Info>
+  For general installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+To get started, simply import and initialize the porter.
+
+```python
+from chonkie import DatasetsPorter
+
+porter = DatasetsPorter()
+```
+
+## Parameters
+
+<ParamField path="chunks" type="list[Chunk]" required>
+  The list of `Chunk` objects to be exported.
+</ParamField>
+
+<ParamField path="save_to_disk" type="bool" default="True">
+  If `True`, the dataset will be saved to the location specified in the `path`
+  parameter.
+</ParamField>
+
+<ParamField path="path" type="str" default="chunks">
+  The local directory path where the dataset should be saved. This is only used
+  if `save_to_disk` is `True`.
+</ParamField>
+
+<ParamField path="**kwargs" type="Any">
+  Additional keyword arguments to be passed directly to the
+  `datasets.Dataset.save_to_disk` method. This allows you to control aspects
+  like the number of shards or processes.
+</ParamField>
+
+## Usage
+
+The `DatasetsPorter` can either return a `Dataset` object directly for in-memory use or save it to disk.
+
+### Return a Dataset Object
+
+By default, the porter returns a `Dataset` object without writing any files.
+
+```python
+from chonkie import Chunk
+
+chunks = [
+    Chunk(text="This is the first chunk.", start_index=0, end_index=25, token_count=5),
+    Chunk(text="This is the second chunk.", start_index=26, end_index=52, token_count=5),
+]
+
+# Get the dataset in memory
+dataset = porter.export(chunks)
+
+print(dataset)
+# Expected output:
+# Dataset({
+#     features: ['text', 'start_index', 'end_index', 'token_count', 'context'],
+#     num_rows: 2
+# })
+```
+
+### Save a Dataset to Disk
+
+To save the dataset, set `save_to_disk=True` and provide a `path`. The method will still return the `Dataset` object.
+
+```python
+# Save the dataset to a directory named "my_exported_chunks"
+dataset = porter.export(chunks, save_to_disk=True, path="my_exported_chunks")
+
+# You can now find the dataset files in the "my_exported_chunks" directory
+```
+
+### Using as a Callable
+
+The porter can also be used as a callable, which is an alias for the `export` method.
+
+```python
+# Get the dataset in memory
+dataset = porter(chunks)
+
+# Save the dataset to disk
+porter(chunks, save_to_disk=True, path="my_exported_chunks")
+```
+
+## Return Type
+
+The `export` method (and the `__call__` method) will always return a `datasets.Dataset` object, regardless of whether it is saved to disk. This allows you to immediately work with the dataset after exporting.

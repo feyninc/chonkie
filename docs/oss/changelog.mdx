@@ -1,0 +1,291 @@
+---
+title: Changelog
+description: Chonkie's Release Notes and Updates 🦛✨
+mode: wide
+icon: "hippo"
+iconType: "solid"
+---
+
+<Update label="v1.5.4">
+  # v1.5.4 Release Highlights ✨
+
+  - **New `GroqGenie`**: Fast inference on Groq hardware! Use Llama models with blazing speed via Groq's infrastructure.
+
+  ```bash
+  pip install "chonkie[groq]"
+  ```
+
+  ```python
+  from chonkie import GroqGenie
+
+  genie = GroqGenie(model="llama-3.3-70b-versatile")
+  response = genie.generate("Hello!")
+  ```
+
+  - **New `CerebrasGenie`**: Fastest inference on Cerebras hardware! Experience ultra-fast LLM inference.
+
+  ```bash
+  pip install "chonkie[cerebras]"
+  ```
+
+  ```python
+  from chonkie import CerebrasGenie
+
+  genie = CerebrasGenie(model="llama-3.3-70b")
+  response = genie.generate("Hello!")
+  ```
+
+  Both new Genies support `generate()` for text generation and `generate_json()` for structured JSON output, following the same interface as existing Genies.
+
+  **Full Changelog**: https://github.com/chonkie-inc/chonkie/compare/v1.5.3...v1.5.4
+</Update>
+
+<Update label="v1.3.0">
+  # v1.3.0 Release Highlights ✨
+
+  ## Breaking Changes
+
+  - **Unified Chunk Type**: All chunkers now return the base `Chunk` type instead of specialized types. The specialized chunk types (`SentenceChunk`, `RecursiveChunk`, `SemanticChunk`, `CodeChunk`, and `LateChunk`) have been removed entirely. This simplifies the API and improves interoperability between different chunkers and refineries.
+
+  - **Unified Sentence Type**: The `SemanticSentence` type has been removed. The base `Sentence` type now includes an optional `embedding` attribute, providing the same functionality with a simpler API.
+
+  - **New `embedding` Attribute**: Both the base `Chunk` and `Sentence` types now include an optional `embedding` attribute that can store embedding vectors (as lists or numpy arrays). This is automatically populated by `EmbeddingsRefinery` and certain chunkers like `LateChunker`.
+
+  ## Migration Guide
+
+  If you were relying on specialized chunk attributes:
+  - `SentenceChunk.sentences` → No longer available in base Chunk
+  - `SemanticChunk.sentences` → No longer available in base Chunk
+  - `CodeChunk.nodes` → No longer available in base Chunk
+  - `RecursiveChunk.level` → No longer available in base Chunk
+  - `LateChunk` → Use base `Chunk` (embedding is now part of base type)
+  - `SemanticSentence` → Use base `Sentence` (embedding is now part of base type)
+
+  All chunkers now consistently return `Chunk` objects with:
+  ```python
+  @dataclass
+  class Chunk:
+      text: str
+      start_index: int
+      end_index: int
+      token_count: int
+      context: Optional[Context] = None
+      embedding: Union[list[float], "np.ndarray", None] = None  # NEW!
+  ```
+
+  ## Import Changes
+
+  When importing the Chunk type, use:
+  ```python
+  from chonkie.types import Chunk
+  ```
+
+  The specialized types are deprecated but remain available for backward compatibility in the legacy module.
+</Update>
+
+<Update label="v1.0.6">
+  # v1.0.6 Release Highlights ✨
+
+  - **New `SlumberChunker`**: Welcome Chonkie's very own agentic chunker! Requires the `genie` optional install and a `GEMINI_API_KEY`. It leverages `Genie`, Chonkie's interface for generative models.
+  
+  ```bash
+  pip install "chonkie[genie]"
+  ```
+
+  ```python
+  # Import
+  from chonkie import SlumberChunker
+
+  # Initialize
+  chunker  = SlumberChunker(verbose=True) # set verbose to True, since it takes a while~
+
+  # CHONK!
+  chunker(text)
+  ```
+
+  - **New `NeuralChunker`**: Introducing a fully neural approach to chunking! Requires the `neural` optional install. This uses a fine-tuned BERT-like model for fast, high-quality chunking.
+
+  ```bash
+  pip install "chonkie[neural]"
+  ```
+
+  ```python
+  # import
+  from chonkie import NeuralChunker
+
+  # initialize
+  chunker = NeuralChunker()
+
+  # CHONK!
+  chunks = chunker(text)
+  ```
+
+  - **`auto` Language Detection for `CodeChunker`**: `CodeChunker` can now automatically detect the programming language. Specify the language manually if performance is critical.
+
+  ```python
+  # Import
+  from chonkie import CodeChunker
+
+  # Initialize the "auto" CodeChunker
+  chunker = CodeChunker() # No need to specify, "auto" by default
+
+  # CHONK!
+  chunks = chunker(code)
+  ```
+
+  - **Introducing `Genie`s**: Added `Genie` to power `SlumberChunker` and future generative features. `Genie`s are Chonkie's way to handle multiple generative APIs and model interfaces. The first is `GeminiGenie`, requiring the `genie` optional install.
+
+  ```bash
+  pip install "chonkie[genie]"
+  ```
+
+  ```python
+  # Import
+  from chonkie import GeminiGenie
+
+  # Init
+  genie = GeminiGenie(api_key=YOUR_API_KEY)
+
+  # generate
+  genie.generate("Hi!")
+
+  # generate JSON
+  genie.generate_json("Hi", JSON_SCHEMA)
+  ```
+
+  **Full Changelog**: https://github.com/chonkie-inc/chonkie/compare/v1.0.5...v1.0.6
+</Update>
+
+
+<Update label="v1.0.5">
+  # v1.0.5 Release Highlights ✨
+
+  This is a quick patch release to include `CodeChunker` in the `__init__.py` for `chonkie` so it can be properly accessed via `from chonkie import CodeChunker`.
+  
+  **Full Changelog**: https://github.com/chonkie-inc/chonkie/compare/v1.0.4...v1.0.5
+</Update>
+
+
+<Update label="v1.0.4">
+  # v1.0.4 Release Highlights ✨
+
+  - **New `CodeChunker`**: Introducing the `CodeChunker`, specialized for handling code files across 100+ programming languages. It understands code structure to provide more meaningful chunks.
+  
+  ```bash
+  pip install "chonkie[code]"
+  ```
+
+  ```python  
+  # Initialize the code chunker
+  chunker = CodeChunker(language="python")
+
+  # Chunk the code
+  code = ... # Your code string
+
+  # CHONK!
+  chunks = chunker(code)
+  ```
+
+  - **`JinaAI` Embeddings Support**: Added `JinaEmbeddings`, enabling their use with `SemanticChunker` and `SDPMChunker`. Just install the `jina` optional install to use it! 
+
+  ```bash
+  pip install "chonkie[jina]"
+  ```
+
+  ```python
+  # Initialize the Jina embeddings  
+  from chonkie import JinaEmbeddings, SemanticChunker
+  
+  # Initialize the Jina embeddings
+  embeddings = JinaEmbeddings()
+
+  # Initialize the semantic chunker
+  chunker = SemanticChunker(embeddings)
+
+  # Chunk the text
+  text = ... # Your text string
+
+  # CHONK!
+  chunks = chunker(text)
+  ```
+
+  - **`OverlapRefinery`**: Enhance your chunks by adding overlapping context using the new `OverlapRefinery`. It's included in the default install and works seamlessly with any chunker.
+  
+  ```python
+  # Initialize the recursive chunker  
+  from chonkie import RecursiveChunker, OverlapRefinery
+  chunker = RecursiveChunker()
+
+  # Initialize the overlap refinery
+  refinery = OverlapRefinery() # Or OverlapRefinery("gpt2")
+
+  # Chunk the text
+  text = ... # Your text string
+
+  # CHONK!
+  chunks = chunker(text)
+
+  # Refine the chunks
+  chunks = refinery(chunks)
+  ```
+
+  - **`EmbeddingsRefinery`**: Compute and attach embeddings directly to your chunks using the `EmbeddingsRefinery`. Streamline the process of loading chunks into vector databases.
+  
+  ```python
+  from chonkie import RecursiveChunker, EmbeddingsRefinery, JinaEmbeddings
+
+  # Initialize the recursive chunker
+  chunker = RecursiveChunker()
+
+  # Initialize the embeddings model
+  # Here we use Jina embeddings for this example, but you can use any other embeddings model
+  embeddings = JinaEmbeddings()
+
+  # Initialize the embeddings refinery
+  refinery = EmbeddingsRefinery(embeddings)
+
+  # Chunk the text
+  text = ... # Your text string
+  chunks = chunker(text)
+  chunks = refinery(chunks) # Each chunk now has a .embedding attribute
+    ```
+  **Full Changelog**:  https://github.com/chonkie-inc/chonkie/compare/v1.0.3...v1.0.4
+
+</Update>
+
+
+<Update label="v1.0.3">
+  # v1.0.3 Release Highlights ✨
+
+  * **Chonkie `Visualizer`**: Visualize and debug chunks easily via terminal printouts or HTML saves. Understand chunk quality and debug your chunker with visual feedback~ Use the `print` method to print rich text on your terminal or use the `save` method to save a highlighted `html` on your device! It's very simple to use, just pass in your chunks~
+
+    ```python
+    from chonkie import Visualizer
+
+    viz = Visualizer()
+
+    # Print the chunks on the terminal with .print or directly call the Visualizer object too
+    viz.print(chunks) 
+
+    # Save the HTML file
+    viz.save("chonkie.html", chunks)
+    ```
+
+    <img width="1028" alt="Chonkie Visualizer Example" src="https://github.com/user-attachments/assets/ea38959b-01bd-4be9-90de-6442542e98a0"/>
+
+  * **Recipes**: Chonkie now adds support for `Recipes` which allow you to use multilingual chunking out-of-the-box, as well as document specific chunking methods. Initial support starts with: `en`, `hi`, `zh`, `jp` and `ko`, while document type `markdown` is supported too. Use it via the `from_recipe` class method with any chunker that takes delimiters or `RecursiveRules`.
+
+    ```python
+    from chonkie import RecursiveChunker
+
+    # Initialize the recursive chunker to chunk Markdown
+    chunker = RecursiveChunker.from_recipe("markdown", lang="en")
+
+    # Initialize the recursive chunker to chunk Hindi texts
+    chunker = RecursiveChunker.from_recipe(lang="hi")
+    ```
+
+  * Performance enhancements in `RecursiveChunker`, `SentenceChunker`, and `WordTokenizer`.
+
+  **Full Changelog**: https://github.com/chonkie-inc/chonkie/compare/v1.0.2...v1.0.3
+</Update>

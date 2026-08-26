@@ -1,8 +1,0 @@
-{
-  "title": "Fetchers",
-  "icon": "FileSearch",
-  "pages": [
-    "overview",
-    "file-fetcher"
-  ]
-}

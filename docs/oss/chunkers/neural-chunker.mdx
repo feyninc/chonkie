@@ -1,0 +1,131 @@
+---
+title: "Neural Chunker"
+description: "Split text using a fine-tuned BERT model to detect semantic shifts"
+icon: "brain"
+iconType: "solid"
+---
+
+The `NeuralChunker` leverages the power of deep learning! It uses a fine-tuned BERT model specifically trained to identify semantic shifts within text, allowing it to split documents at points where the topic or context changes significantly. This provides highly coherent chunks ideal for RAG.
+
+## API Reference
+
+To use the `NeuralChunker` via the API, check out the [API reference documentation](../../api/chunkers/neural-chunker).
+
+## Installation
+
+NeuralChunker requires specific dependencies for its deep learning model. You can install it with:
+
+```bash
+pip install "chonkie[neural]"
+```
+
+<Info>
+  For general installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+
+```python
+from chonkie import NeuralChunker
+
+# Basic initialization with default parameters
+chunker = NeuralChunker(
+    model="mirth/chonky_modernbert_base_1",  # Default model
+    device_map="cpu",                        # Device to run the model on ('cpu', 'cuda', etc.)
+    min_characters_per_chunk=10,             # Minimum characters for a chunk
+)
+
+# Specify a different model or device
+chunker = NeuralChunker(
+    model="path/to/your/model",
+    device_map="cuda:0" # Use GPU if available
+)
+```
+
+## Parameters
+
+<ParamField path="model" type="str" default="mirth/chonky_modernbert_base_1">
+  The identifier or path to the fine-tuned BERT model used for detecting
+  semantic shifts.
+</ParamField>
+
+<ParamField path="tokenizer" type="Optional[Union[str, Any]]" default="None">
+  The tokenizer to use for the chunker
+</ParamField>
+
+<ParamField path="device_map" type="str" default="cpu">
+  The device to run the inference on (e.g., "cpu", "cuda", "mps"). Chonkie will
+  try to auto-detect the best available device if not specified.
+</ParamField>
+
+<ParamField path="min_characters_per_chunk" type="int" default="10">
+  The minimum number of characters required for a text segment to be considered
+  a valid chunk.
+</ParamField>
+
+<ParamField path="stride" type="Optional[int]" default="None">
+  Stride to use for the chunker. Will automatically select appropriate stride
+  for the model if not specified.
+</ParamField>
+
+## Usage
+
+### Single Text Chunking
+
+```python
+text = """Topic one starts here and continues for a bit.
+Suddenly, the context shifts to topic two, which is quite different.
+Topic two carries on, discussing various aspects. Then topic one briefly returns.
+Finally, we conclude with topic three."""
+
+chunks = chunker.chunk(text)
+
+for chunk in chunks:
+    print(f"Chunk text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}") # Note: token_count might be added post-hoc or not available depending on implementation
+    print(f"Start index: {chunk.start_index}")
+    print(f"End index: {chunk.end_index}")
+```
+
+### Batch Chunking
+
+```python
+texts = [
+    "Document 1 discussing AI ethics. Then shifts to model training techniques.",
+    "Document 2 about pygmy hippos. Their habitat and diet. Then conservation efforts."
+]
+batch_chunks = chunker.chunk_batch(texts)
+
+for doc_chunks in batch_chunks:
+    for chunk in doc_chunks:
+        print(f"Chunk: {chunk.text}")
+```
+
+### Using as a Callable
+
+```python
+# Single text
+chunks = chunker("Text discussing topic A... then topic B...")
+
+# Multiple texts
+batch_chunks = chunker(["Text 1...", "Text 2..."])
+```
+
+## Return Type
+
+NeuralChunker returns chunks as `Chunk` objects.
+
+```python
+from dataclasses import dataclass
+from typing import Optional, Union
+
+@dataclass
+class Chunk:
+    text: str                                           # The chunk text
+    start_index: int                                    # Starting position in original text
+    end_index: int                                      # Ending position in original text
+    token_count: int                                    # Number of tokens in chunk
+    context: Optional[str] = None                       # Optional overlap context text
+    embedding: Union[list[float], "np.ndarray", None] = None  # Optional embedding vector
+```

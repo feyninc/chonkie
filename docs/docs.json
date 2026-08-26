@@ -1,0 +1,258 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "palm",
+  "name": "Chonkie",
+  "colors": {
+    "primary": "#1a1a1a",
+    "light": "#faf6e3",
+    "dark": "#77c775"
+  },
+  "favicon": "/favicon.ico",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Welcome",
+        "icon": "hippo",
+        "groups": [
+          {
+            "group": "Welcome",
+            "pages": [
+              "common/welcome",
+              "common/concepts"
+            ]
+          },
+          {
+            "group": "Products",
+            "pages": [
+              "common/open-source"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Open Source",
+        "icon": "book",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "oss/quick-start",
+              "oss/installation",
+              "oss/pipelines",
+              "oss/troubleshooting",
+              "oss/rfc-chonkie-v2"
+            ]
+          },
+          {
+            "group": "API Server",
+            "pages": [
+              "oss/api/overview",
+              "oss/api/quickstart",
+              "oss/api/endpoints",
+              "oss/api/pipelines",
+              "oss/api/docker"
+            ]
+          },
+          {
+            "group": "Chefs",
+            "pages": [
+              "oss/chefs/overview",
+              "oss/chefs/tablechef",
+              "oss/chefs/textchef",
+              "oss/chefs/markdownchef",
+              "oss/chefs/mistral-ocr",
+              "oss/chefs/liteparse"
+            ]
+          },
+          {
+            "group": "Fetchers",
+            "pages": [
+              "oss/fetchers/overview",
+              "oss/fetchers/file-fetcher"
+            ]
+          },
+          {
+            "group": "Chunkers",
+            "pages": [
+              "oss/chunkers/overview",
+                "oss/chunkers/choosing-a-chunker",
+                "oss/chunkers/code-chunker",
+                "oss/chunkers/fast-chunker",
+                "oss/chunkers/late-chunker",
+                "oss/chunkers/neural-chunker",
+                "oss/chunkers/recursive-chunker",
+                "oss/chunkers/semantic-chunker",
+                "oss/chunkers/sentence-chunker",
+                "oss/chunkers/slumber-chunker",
+                "oss/chunkers/table-chunker",
+                "oss/chunkers/teraflopai-chunker",
+                "oss/chunkers/token-chunker"
+            ]
+          },
+          {
+            "group": "Embeddings",
+            "pages": [
+              "oss/embeddings/overview",
+              "oss/embeddings/auto-embeddings",
+              "oss/embeddings/cohere-embeddings",
+              "oss/embeddings/sentence-transformer-embeddings",
+              "oss/embeddings/openai-embeddings",
+              "oss/embeddings/azure-embeddings",
+              "oss/embeddings/model2vec-embeddings",
+              "oss/embeddings/jina-embeddings",
+              "oss/embeddings/gemini-embeddings",
+              "oss/embeddings/voyageai-embeddings",
+              "oss/embeddings/custom-embeddings",
+              "oss/embeddings/litellm-embeddings"
+            ]
+          },
+          {
+            "group": "Refinery",
+            "pages": [
+              "oss/refinery/overview",
+              "oss/refinery/overlap-refinery",
+              "oss/refinery/embeddings-refinery"
+            ]
+          },
+          {
+            "group": "Handshakes",
+            "pages": [
+              "oss/handshakes/overview",
+              "oss/handshakes/chroma-handshake",
+              "oss/handshakes/elastic-handshake",
+              "oss/handshakes/lancedb-handshake",
+              "oss/handshakes/milvus-handshake",
+              "oss/handshakes/mongodb-handshake",
+              "oss/handshakes/pgvector-handshake",
+              "oss/handshakes/pinecone-handshake",
+              "oss/handshakes/qdrant-handshake",
+              "oss/handshakes/turbopuffer-handshake",
+              "oss/handshakes/weaviate-handshake"
+            ]
+          },
+          {
+            "group": "Porters",
+            "pages": [
+              "oss/porters/overview",
+              "oss/porters/json-porter",
+              "oss/porters/datasets-porter"
+            ]
+          },
+          {
+            "group": "Utils",
+            "pages": [
+              "oss/utils/visualizer",
+              "oss/utils/hubbie",
+              "oss/utils/logging"
+            ]
+          },
+          {
+            "group": "Experimental",
+            "pages": [
+              "oss/experimental/overview",
+              "oss/experimental/code-chunker",
+              "oss/experimental/chonkie-cli"
+            ]
+          },
+          {
+            "group": "Changelog",
+            "pages": [
+              "oss/changelog"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Discord",
+          "href": "https://discord.gg/Q6zkP8w6ur",
+          "icon": "discord"
+        },
+        {
+          "anchor": "Contact",
+          "href": "mailto:support@chonkie.ai",
+          "icon": "envelope"
+        }
+      ]
+    }
+  },
+  "styling": {
+    "codeblocks": "system"
+  },
+  "logo": {
+    "light": "/assets/logo/chonkie_logo_horizontal_large.png",
+    "dark": "/assets/logo/chonkie_logo_horizontal_large.png"
+  },
+  "appearance": {
+    "default": "light",
+    "strict": false
+  },
+  "background": {
+    "color": {
+      "light": "#faf6e3",
+      "dark": "#1a1a1a"
+    }
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/chonkie-inc/chonkie"
+    },
+    "links": []
+  },
+  "seo": {
+    "metatags": {
+      "og:site_map": "Chonkie Documentation",
+      "og:title": "Chonkie Documentation",
+      "og:description": "🦛 CHONK your text with Chonkie✨ - The lightweight ingestion library for fast, efficient and robust RAG pipelines",
+      "og:url": "https://docs.chonkie.ai",
+      "og:image": "/assets/logo/chonkie_logo_white_bg_brown.png",
+      "og:logo": "/assets/logo/chonkie_logo_horizontal_large.png",
+      "article:publisher": "https://github.com/chonkie-inc",
+      "twitter:title": "Chonkie Documentation",
+      "twitter:description": "🦛 CHONK your text with Chonkie✨ - The lightweight ingestion library for fast, efficient and robust RAG pipelines",
+      "twitter:site": "https://docs.chonkie.ai",
+      "twitter:image": "/assets/logo/chonkie_logo_white_bg_brown.png"
+    },
+    "indexing": "navigable"
+  },
+  "footer": {
+    "socials": {
+      "website": "https://chonkie.ai/",
+      "github": "https://github.com/chonkie-inc/chonkie",
+      "x": "https://x.com/ChonkieAI",
+      "discord": "https://discord.com/invite/Q6zkP8w6ur"
+    }
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      {
+        "title": "Share on X",
+        "description": "Share this documentation page on X",
+        "icon": "x-twitter",
+        "href": {
+          "base": "https://x.com/intent/tweet",
+          "query": [
+            {
+              "key": "text",
+              "value": "Check out Chonkie docs: $page"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Report an Issue",
+        "description": "Report documentation issues or suggest improvements on GitHub",
+        "icon": "github",
+        "href": "https://github.com/chonkie-inc/chonkie/issues/new"
+      }
+    ]
+  }
+}

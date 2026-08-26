@@ -1,0 +1,197 @@
+---
+title: Pgvector Handshake
+sidebarTitle: Pgvector Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a PostgreSQL database with pgvector.
+---
+
+The `PgvectorHandshake` class provides seamless integration between Chonkie's chunking system and PostgreSQL with pgvector. It uses the vecs client library from Supabase underneath to provide a higher-level API with automatic indexing, metadata filtering, and simplified connection management.
+
+Store your Chonkie chunks in PostgreSQL with vector embeddings and perform semantic search without ever leaving the Chonkie SDK.
+
+## Installation
+
+Before using the Pgvector handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[pgvector]
+```
+
+You'll also need PostgreSQL with the pgvector extension installed:
+
+```sql
+-- Connect to your database and enable pgvector
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+## Initialization
+
+```python
+from chonkie import PgvectorHandshake
+
+# Initialize with individual connection parameters
+handshake = PgvectorHandshake(
+    host="localhost",
+    port=5432,
+    database="your_database",
+    user="your_user",
+    password="your_password",
+    collection_name="chonkie_chunks"
+)
+
+# Or use a connection string
+handshake = PgvectorHandshake(
+    connection_string="postgresql://user:password@localhost:5432/database"
+)
+
+# Or use an existing vecs client
+import vecs
+client = vecs.create_client("postgresql://user:password@localhost:5432/database")
+handshake = PgvectorHandshake(client=client, collection_name="my_collection")
+```
+
+## Usage
+
+<AccordionGroup>
+
+<Accordion title="Writing Chunks" description="Store your chunked text in PostgreSQL with vector embeddings" icon="upload" iconType="solid">
+
+```python
+from chonkie import PgvectorHandshake, RecursiveChunker
+
+# Initialize the handshake
+handshake = PgvectorHandshake(
+    host="localhost",
+    database="my_database",
+    user="my_user",
+    password="my_password"
+)
+
+# Create some chunks
+chunker = RecursiveChunker(chunk_size=2048)
+chunks = chunker.chunk("Chonkie makes PostgreSQL vector search easy!")
+
+# Write chunks to PostgreSQL
+handshake.write(chunks)
+```
+
+</Accordion>
+
+<Accordion title="Searching Chunks" description="Find similar chunks using vector similarity search" icon="magnifying-glass" iconType="solid">
+
+```python
+# Search for similar chunks
+results = handshake.search(
+    query="PostgreSQL vector search",
+    limit=5
+)
+
+for result in results:
+    print(f"Text: {result['text']}")
+    print(f"Similarity: {result['similarity']:.3f}")
+    print("---")
+```
+
+</Accordion>
+
+<Accordion title="Creating Indexes" description="Optimize search performance with vector indexes" icon="bolt" iconType="solid">
+
+```python
+# Create an HNSW index for better performance
+handshake.create_index(method="hnsw")
+
+# Or create with custom parameters
+handshake.create_index(
+    method="hnsw",
+    m=16,
+    ef_construction=64
+)
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+## Parameters
+
+<ParamField
+    path="client"
+    type="Optional[vecs.Client]"
+    default="None"
+>
+    An existing vecs.Client instance. If provided, other connection parameters are ignored.
+</ParamField>
+
+<ParamField
+    path="host"
+    type="str"
+    default="localhost"
+>
+    PostgreSQL host address.
+</ParamField>
+
+<ParamField
+    path="port"
+    type="int"
+    default="5432"
+>
+    PostgreSQL port number.
+</ParamField>
+
+<ParamField
+    path="database"
+    type="str"
+    default="postgres"
+>
+    PostgreSQL database name.
+</ParamField>
+
+<ParamField
+    path="user"
+    type="str"
+    default="postgres"
+>
+    PostgreSQL username.
+</ParamField>
+
+<ParamField
+    path="password"
+    type="str"
+    default="postgres"
+>
+    PostgreSQL password.
+</ParamField>
+
+<ParamField
+    path="connection_string"
+    type="Optional[str]"
+    default="None"
+>
+    Full PostgreSQL connection string. If provided, individual connection parameters are ignored.
+</ParamField>
+
+<ParamField
+    path="collection_name"
+    type="str"
+    default="chonkie_chunks"
+>
+    Name of the collection to store chunks in.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use. Can be a model name or a BaseEmbeddings instance.
+</ParamField>
+
+<ParamField
+    path="vector_dimensions"
+    type="Optional[int]"
+    default="None"
+>
+    Number of dimensions for the vector embeddings. If not provided, will be inferred from the embedding model.
+</ParamField>
+

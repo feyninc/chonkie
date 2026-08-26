@@ -1,0 +1,129 @@
+---
+title: "TeraflopAI Chunker"
+description: "Segment text using the TeraflopAI Segmentation API"
+icon: "microchip"
+iconType: "solid"
+---
+
+The `TeraflopAIChunker` uses the [TeraflopAI](https://www.teraflopai.com/) Segmentation API to split text into semantically meaningful segments. It is especially useful for domain-specific segmentation such as legal documents.
+
+## Installation
+
+TeraflopAI Chunker requires the `teraflopai` Python package:
+
+```bash
+pip install "chonkie[teraflopai]"
+```
+
+<Info>
+  For general installation instructions, see the [Installation
+  Guide](/oss/installation).
+</Info>
+
+## Initialization
+<CodeGroup>
+```python using api_key
+from chonkie import TeraflopAIChunker
+
+# Using an API key (or set the TERAFLOPAI_API_KEY environment variable)
+chunker = TeraflopAIChunker(api_key="your_api_key_here")
+```
+```python using custom_url
+chunker = TeraflopAIChunker(
+    api_key="your_api_key_here",
+    url="https://api.segmentation.teraflopai.com/v1/segmentation/free",
+)
+```
+```python using external client
+from teraflopai import TeraflopAI
+
+client = TeraflopAI(
+    url="https://api.segmentation.teraflopai.com/v1/segmentation/free",
+    api_key="your_api_key_here",
+)
+chunker = TeraflopAIChunker(client=client)
+```
+</CodeGroup>
+
+## Parameters
+
+<ParamField path="client" type="Optional[TeraflopAI]" default="None">
+  An existing TeraflopAI client instance. If provided, `url` and `api_key` are
+  ignored.
+</ParamField>
+
+<ParamField path="url" type="str" default="https://api.segmentation.teraflopai.com/v1/segmentation/free">
+  The URL for the TeraflopAI segmentation API endpoint.
+</ParamField>
+
+<ParamField path="api_key" type="Optional[str]" default="None">
+  The API key for authentication. If not provided, it will be read from the
+  `TERAFLOPAI_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="tokenizer" type="Union[str, TokenizerProtocol]" default="character">
+  The tokenizer used to compute token counts for returned chunks.
+</ParamField>
+
+## Usage
+
+### Single Text Chunking
+
+```python
+text = """
+Global warming refers to the long-term increase in Earth’s average surface temperature due to human activities, primarily the emission of greenhouse gases such as carbon dioxide and methane. These gases trap heat in the atmosphere, leading to significant changes in climate patterns across the globe.
+
+Scientists have observed rising temperatures, melting polar ice caps, and increasing sea levels, all of which pose serious risks to ecosystems and human societies. Extreme weather events such as hurricanes, droughts, and heatwaves are becoming more frequent and intense as a result of these changes.
+
+Governments and organizations around the world are working to reduce emissions, transition to renewable energy sources, and promote sustainable practices. However, global cooperation and immediate action are essential to mitigate the long-term impacts and protect future generations from the most severe consequences of climate change.
+
+Public awareness and individual responsibility also play a crucial role in addressing global warming. Simple actions like reducing energy consumption, minimizing waste, and supporting environmentally friendly initiatives can collectively make a meaningful difference in slowing down this global crisis.
+"""
+
+chunks = chunker.chunk(text)
+
+for chunk in chunks:
+    print(f"Chunk text: {chunk.text}")
+    print(f"Token count: {chunk.token_count}")
+    print(f"Start index: {chunk.start_index}")
+    print(f"End index: {chunk.end_index}")
+```
+
+### Batch Chunking
+
+```python
+texts = [
+    "First document to segment.",
+    "Second document with more content to segment.",
+]
+
+batch_results = chunker(texts)
+
+for i, chunks in enumerate(batch_results):
+    print(f"Document {i}: {len(chunks)} chunks")
+```
+
+### Using with Environment Variable
+
+```bash
+export TERAFLOPAI_API_KEY="your_api_key_here"
+```
+
+```python
+from chonkie import TeraflopAIChunker
+
+# No need to pass api_key — it will be read from the environment
+chunker = TeraflopAIChunker()
+chunks = chunker.chunk("Your text here.")
+```
+
+## How It Works
+
+1. The text is sent to the TeraflopAI Segmentation API endpoint.
+2. The API returns a list of text segments.
+3. Each segment is converted into a Chonkie `Chunk` object with proper `start_index`, `end_index`, and `token_count` fields.
+
+<Note>
+  The TeraflopAI Segmentation API performs the segmentation on the server side.
+  This chunker requires an active internet connection and a valid API key.
+</Note>

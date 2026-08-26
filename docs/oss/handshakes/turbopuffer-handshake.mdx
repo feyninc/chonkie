@@ -1,0 +1,108 @@
+---
+title: Turbopuffer Handshake
+icon: handshake
+iconType: solid
+description: Export Chonkie's Chunks into a Turbopuffer database.
+---
+
+The `TurbopufferHandshake` class provides seamless integration between Chonkie's chunking system and Turbopuffer, a high-performance vector database.
+
+Embed and store your Chonkie chunks in Turbopuffer without ever leaving the Chonkie SDK.
+
+<Note>
+    The Turbopuffer Handshake requires a Turbopuffer API key. You can get one by signing up for a [Turbopuffer account](https://turbopuffer.com).
+</Note>
+
+## Installation
+
+Before using the Turbopuffer handshake, make sure to install the required dependencies:
+
+```bash
+pip install chonkie[turbopuffer]
+```
+
+## Basic Usage
+
+### Initialization
+
+```python
+from chonkie import TurbopufferHandshake
+
+# Initialize with default settings (requires TURBOPUFFER_API_KEY environment variable)
+handshake = TurbopufferHandshake()
+
+# Or provide an API key directly
+handshake = TurbopufferHandshake(api_key="your_turbopuffer_api_key")
+
+# Use a specific namespace
+handshake = TurbopufferHandshake(namespace_name="my_documents")
+
+# Or use an existing Turbopuffer namespace
+import turbopuffer as tpuf
+ns = tpuf.Namespace("existing_namespace")
+handshake = TurbopufferHandshake(namespace=ns)
+```
+
+### Writing Chunks to Turbopuffer
+
+```python
+from chonkie import TurbopufferHandshake, SemanticChunker
+
+handshake = TurbopufferHandshake(namespace_name="my_documents")
+
+chunker = SemanticChunker()
+chunks = chunker("Chonkie chunks, turbopuffer puffs!")
+
+handshake.write(chunks)
+```
+
+## Parameters
+
+<ParamField
+    path="namespace"
+    type="Optional[tpuf.Namespace]"
+    default="None"
+>
+    An existing Turbopuffer Namespace instance to use. If not provided, a new namespace will be created.
+</ParamField>
+
+<ParamField
+    path="namespace_name"
+    type="Union[str, Literal['random']]"
+    default="random"
+>
+    Name of the namespace to use. If "random", a unique name will be generated.
+    Only used if `namespace` parameter is not provided.
+</ParamField>
+
+<ParamField
+    path="embedding_model"
+    type="Union[str, BaseEmbeddings]"
+    default="minishlab/potion-retrieval-32M"
+>
+    Embedding model to use. Can be a model name or a BaseEmbeddings instance.
+</ParamField>
+
+<ParamField
+    path="api_key"
+    type="Optional[str]"
+    default="None"
+>
+    Turbopuffer API key. If not provided, will look for TURBOPUFFER_API_KEY environment variable.
+</ParamField>
+
+## Authentication
+
+You can authenticate with Turbopuffer in one of two ways:
+
+1. **Environment Variable** (Recommended for development):
+   ```bash
+   export TURBOPUFFER_API_KEY='your-api-key-here'
+   ```
+
+2. **Directly in code** (Not recommended for production):
+   ```python
+   handshake = TurbopufferHandshake(api_key="your-api-key-here")
+   ```
+
+For production environments, it's recommended to use environment variables or a secure secret management system to handle your API keys.

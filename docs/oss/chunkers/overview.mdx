@@ -1,0 +1,206 @@
+---
+title: Chunkers Overview
+sidebarTitle: Overview
+description: Overview of the different chunkers available in Chonkie
+icon: "list"
+iconType: "solid"
+---
+
+Chonkie provides multiple chunking strategies to handle different text processing needs. Each chunker in Chonkie is designed to follow the same core principles outlined in the [concepts](/common/concepts) page.
+
+<Info>
+  Not sure which chunker to use? Check out the [Choosing a
+  Chunker](/oss/chunkers/choosing-a-chunker) guide for recommendations based on
+  your use case.
+</Info>
+
+<CardGroup cols={2}>
+  <Card title="CodeChunker" icon="laptop" href="/oss/chunkers/code-chunker">
+    Splits code based on its structure using ASTs. Ideal for chunking source
+    code files.
+  </Card>
+  <Card title="FastChunker" icon="bolt" href="/oss/chunkers/fast-chunker">
+    SIMD-accelerated byte-based chunking at 100+ GB/s. Best for high-throughput
+    pipelines where byte size limits are acceptable.
+  </Card>
+  <Card title="LateChunker" icon="clock" href="/oss/chunkers/late-chunker">
+    Chunks using Late Chunking algorithm, best for higher recall in your RAG
+    applications.
+  </Card>
+  <Card title="NeuralChunker" icon="brain" href="/oss/chunkers/neural-chunker">
+    Uses a fine-tuned BERT model to split text based on semantic shifts. Great
+    for topic-coherent chunks.
+  </Card>
+  <Card
+    title="RecursiveChunker"
+    icon="chart-tree-map"
+    href="/oss/chunkers/recursive-chunker"
+  >
+    Recursively chunks documents into smaller chunks. Best for long documents
+    with well-defined structure.
+  </Card>
+  <Card
+    title="SemanticChunker"
+    icon="magnet"
+    href="/oss/chunkers/semantic-chunker"
+  >
+    Groups content based on semantic similarity. Best for preserving context and
+    topical coherence.
+  </Card>
+  <Card
+    title="SentenceChunker"
+    icon="align-left"
+    href="/oss/chunkers/sentence-chunker"
+  >
+    Splits text at sentence boundaries. Perfect for maintaining semantic
+    completeness at the sentence level.
+  </Card>
+  <Card
+    title="SlumberChunker"
+    icon="wand-magic-sparkles"
+    href="/oss/chunkers/slumber-chunker"
+  >
+    Agentic chunking using generative models (LLMs) via the Genie interface for
+    S-tier chunk quality. 🦛🧞
+  </Card>
+  <Card
+    title="TableChunker"
+    icon="table-cells"
+    href="/oss/chunkers/table-chunker"
+  >
+    Splits large markdown tables into smaller, manageable chunks by row,
+    preserving headers. Great for tabular data in RAG and LLM pipelines.
+  </Card>
+  <Card title="TeraflopAIChunker" icon="microchip" href="/oss/chunkers/teraflopai-chunker">
+    Segments text using the TeraflopAI Segmentation API. Ideal for
+    domain-specific segmentation such as legal documents.
+  </Card>
+  <Card title="TokenChunker" icon="scissors" href="/oss/chunkers/token-chunker">
+    Splits text into fixed-size token chunks. Best for maintaining consistent
+    chunk sizes and working with token-based models.
+  </Card>
+</CardGroup>
+
+## Availability
+
+Different chunkers are available depending on your installation:
+
+| Chunker          |                        Default                         |                       embeddings                       |                    `"chonkie[all]"`                    |                   Chonkie JS                    |                          API Chunking                           |
+| ---------------- | :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: | :----------------------------------------------------: |
+| TokenChunker     | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| FastChunker      | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |   <Icon icon="x" color="#ff0000" iconType="solid" />   |
+| SentenceChunker  | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| RecursiveChunker | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| TableChunker     | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| CodeChunker      |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| SemanticChunker  |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| LateChunker      |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| NeuralChunker    |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> |
+| SlumberChunker   |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> | <Icon icon="check" color="#005c00" iconType="solid" /> |   <Icon icon="x" color="#ff0000" iconType="solid" />   | <Icon icon="check" color="#005c00" iconType="solid" /> |
+
+## Common Interface
+
+All chunkers share a consistent interface:
+
+<CodeGroup>
+```python Python
+# Single text chunking
+chunks = chunker.chunk(text)
+
+# Batch processing
+chunks = chunker.chunk_batch(texts)
+
+# Direct calling
+chunks = chunker(text)  # or chunker([text1, text2])
+
+# Async variants (all chunkers support these)
+chunks = await chunker.achunk(text)
+chunks = await chunker.achunk_batch(texts)
+```
+
+```javascript JavaScript
+// Single text chunking
+const chunks = await chunker.chunk(text);
+```
+
+</CodeGroup>
+
+## Async Support
+
+Every chunker supports async out of the box — no extra setup required.
+
+| Method | Async Equivalent | Description |
+|--------|-----------------|-------------|
+| `chunk(text)` | `achunk(text)` | Chunk a single text |
+| `chunk_batch(texts)` | `achunk_batch(texts)` | Chunk a list of texts |
+| `chunk_document(doc)` | `achunk_document(doc)` | Chunk a `Document` object |
+
+### Basic Usage
+
+```python
+import asyncio
+from chonkie import RecursiveChunker
+
+async def main():
+    chunker = RecursiveChunker(chunk_size=512)
+
+    chunks = await chunker.achunk("Your document text here...")
+    all_chunks = await chunker.achunk_batch([
+        "First document...",
+        "Second document...",
+        "Third document...",
+    ])
+
+asyncio.run(main())
+```
+
+### Concurrent Chunking
+
+Use `asyncio.gather` to chunk multiple texts concurrently:
+
+```python
+import asyncio
+from chonkie import SemanticChunker
+
+async def process_documents(texts: list[str]):
+    chunker = SemanticChunker(chunk_size=512)
+    results = await asyncio.gather(
+        *[chunker.achunk(text) for text in texts]
+    )
+    return results
+```
+
+### How It Works
+
+- **`achunk` and `achunk_batch`** run the synchronous methods in a thread pool via `asyncio.to_thread`, so CPU-bound chunking does not block your event loop.
+- **`achunk_document`** goes further: if the document has pre-existing chunks, it dispatches a concurrent `asyncio.gather` over all of them.
+
+<Info>
+  Because `achunk` and `achunk_batch` use `asyncio.to_thread`, they are safe to use in async web frameworks (FastAPI, Starlette, aiohttp, etc.) without blocking the event loop.
+</Info>
+
+## F.A.Q.
+
+<AccordionGroup>
+  <Accordion title="Are all the chunkers thread-safe?" icon="reel">
+    Yes, all the chunkers are thread-safe. Though, the performance might vary
+    since some chunkers use threading under the hood. So, monitor your
+    performance accordingly.
+  </Accordion>
+
+  <Accordion title="Do I need to install anything extra for async support?">
+    No. Async support is built into every chunker via `BaseChunker`. Any chunker you import from `chonkie` already has `achunk`, `achunk_batch`, and `achunk_document` available.
+  </Accordion>
+
+  <Accordion title="Does async chunking improve throughput?">
+    Yes, especially when chunking many texts concurrently. `achunk` offloads work to a thread pool, so multiple coroutines can chunk in parallel without blocking the event loop. For single-text chunking the overhead is minimal.
+  </Accordion>
+
+  <Accordion title="Is it safe to share a chunker instance across async tasks?">
+    Yes. All chunkers are thread-safe, so sharing a single instance across concurrent `asyncio.gather` calls is fine and avoids redundant initialization costs.
+  </Accordion>
+
+  <Accordion title="Which async frameworks are supported?">
+    Any framework that uses `asyncio` — FastAPI, Starlette, aiohttp, Sanic, Litestar, and others. The async methods use standard `asyncio` primitives with no framework-specific dependencies.
+  </Accordion>
+</AccordionGroup>

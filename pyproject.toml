@@ -52,7 +52,7 @@ dependencies = [
     "chonkie-core>=0.10.2",
     "tenacity>=8.0.0",
     "httpx>=0.28.1",
-    "tokie>=0.0.10",
+    "tokie>=0.1.2",
 ]
 
 [project.urls]

@@ -1,0 +1,44 @@
+---
+title: AzureOpenAIEmbeddings
+sidebarTitle: Azure OpenAI
+description: Embed text using Azure OpenAI embeddings
+icon: brain-circuit
+iconType: solid
+---
+
+Embeddings are handled by the `AzureOpenAIEmbeddings` class, which wraps the Azure OpenAI service.
+
+## Installation
+
+Embeddings require the `openai`, `azure-identity`, `numpy`, and `tiktoken` libraries. See the [Installation Guide](/oss/installation) for more information.
+
+## Usage
+
+```python
+from chonkie import AzureOpenAIEmbeddings
+
+# Initialize Azure OpenAI embeddings
+embeddings = AzureOpenAIEmbeddings(
+	azure_endpoint="https://<your-resource>.openai.azure.com/",
+	azure_api_key="<your-api-key>",
+	model="text-embedding-3-small",  # or other supported model
+	deployment="<your-deployment-name>"
+)
+
+# Single embedding
+emb = embeddings.embed("your text here")
+
+# Batch embedding
+embs = embeddings.embed_batch(["text1", "text2"])
+```
+
+## Example
+
+```python
+embeddings = AzureOpenAIEmbeddings(
+	azure_endpoint="https://my-resource.openai.azure.com/",
+	azure_api_key="my-key",
+	model="text-embedding-3-small",
+	deployment="embedding-deployment"
+)
+```

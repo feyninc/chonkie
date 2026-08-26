@@ -1,0 +1,54 @@
+---
+title: Embeddings Refinery
+description: Embed Chunked Texts
+icon: "atom"
+iconType: "solid"
+---
+
+The `EmbeddingsRefinery` allows you to add more more information
+to your chunks by adding embeddings to them. This is useful for
+downstream tasks like semantic search, clustering, or vector database insertions.
+
+## API Reference
+
+To use the `EmbeddingsRefinery` via the API, check out the [API reference documentation](../../api/refineries/embeddings).
+
+## Initialization
+
+To use the `EmbeddingsRefinery`, you need to initialize it with an embedding model.
+
+```python
+from chonkie import EmbeddingsRefinery
+
+# Initialize with string model identifier
+# or an embedding model instance
+em_refinery = EmbeddingsRefinery(
+    embedding_model="minishlab/potion-base-32M",  # Required
+)
+```
+
+## Usage
+
+Use the `EmbeddingsRefinery` object as a callable or the
+`refine` method to add embeddings to your chunks.
+
+```python
+from chonkie import TokenChunker, EmbeddingsRefinery
+
+test_string = "This is a test string. It will be chunked and embedded."
+chunker = TokenChunker()
+chunks = chunker(test_string)
+
+# Add embeddings to the chunks
+em_refinery = EmbeddingsRefinery(
+    embedding_model="minishlab/potion-base-32M",  # Model string or BaseEmbeddings instance
+)
+
+chunks_with_embeddings = em_refinery(chunks)
+```
+
+## Parameters
+
+<ParamField path="embedding_model" type="Union[str, BaseEmbeddings]">
+  Model identifier or embedding model instance
+</ParamField>

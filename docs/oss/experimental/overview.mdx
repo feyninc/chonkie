@@ -1,0 +1,56 @@
+---
+title: "Overview"
+description: "Explore cutting-edge chunking capabilities with Chonkie's experimental features"
+sidebarTitle: "Experimental Features"
+icon: "flask"
+---
+
+# Experimental Features
+
+Welcome to Chonkie's experimental features! This section contains advanced, cutting-edge functionality that's currently in development and testing phases.
+
+<Warning>
+**Experimental Notice**: Features in this section are experimental and may change significantly between versions. They are provided for early testing and feedback. Use with caution in production environments.
+</Warning>
+
+## What's Experimental?
+
+Experimental features in Chonkie represent:
+
+- **Advanced algorithms** that are still being refined
+- **New chunking strategies** that may not be fully optimized
+- **Innovative approaches** to text processing that need real-world validation
+- **Features with evolving APIs** that may change based on user feedback
+- **CLI improvements** allowing for directory processing and pipeline execution from the terminal
+
+## Getting Started
+
+To use experimental features, import them from the `chonkie.experimental` module:
+
+```python
+from chonkie.experimental import CodeChunker
+
+# Create an experimental chunker
+chunker = CodeChunker(language="python", chunk_size=2048)
+```
+
+## Providing Feedback
+
+Your feedback is crucial for graduating experimental features to stable status. If you encounter issues or have suggestions:
+
+1. **Open an issue** on our [GitHub repository](https://github.com/chonkie-inc/chonkie)
+2. **Join our Discord** to discuss with the community
+3. **Share your use cases** to help us understand real-world applications
+
+## Migration to Stable
+
+When experimental features become stable, they will:
+
+- Move to the main Chonkie namespace
+- Receive API stability guarantees
+- Include comprehensive documentation and examples
+- Be covered by semantic versioning promises
+
+<Note>
+We recommend using experimental features in development and testing environments first, and carefully evaluating their performance before production use.
+</Note>
