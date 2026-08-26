@@ -2,6 +2,7 @@
 
 import inspect
 from abc import ABC, abstractmethod
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
@@ -23,6 +24,20 @@ _TIKTOKEN_TO_TOKIE_MAPPING = {
     "p50k_base": "Xenova/text-davinci-003",
     "gpt2": "openai-community/gpt2",
 }
+
+
+def _byte_offsets_to_character_offsets(
+    text: str, byte_offsets: Sequence[tuple[int, int]]
+) -> list[tuple[int, int]]:
+    """Convert UTF-8 byte offsets into offsets into a Python string."""
+    character_boundaries = [0]
+    for character in text:
+        character_boundaries.append(character_boundaries[-1] + len(character.encode("utf-8")))
+
+    def character_offset(byte_offset: int) -> int:
+        return bisect_right(character_boundaries, byte_offset) - 1
+
+    return [(character_offset(start), character_offset(end)) for start, end in byte_offsets]
 
 
 class TokenizerProtocol(Protocol):
@@ -600,6 +615,15 @@ class TiktokenAutoTokenizer(AutoTokenizer):
     if TYPE_CHECKING:
         tokenizer: tiktoken.Encoding
 
+    def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        """Encode text and return character offsets for each token."""
+        token_ids = list(self.encode(text))
+        decoded, starts = self.tokenizer.decode_with_offsets(token_ids)
+        if decoded != text:
+            raise ValueError("Tokenizer did not round-trip the input text.")
+        ends = [*starts[1:], len(text)]
+        return token_ids, list(zip(starts, ends))
+
 
 class TransformersAutoTokenizer(AutoTokenizer):
     """Adapter for HuggingFace `transformers` tokenizers."""
@@ -617,6 +641,11 @@ class TransformersAutoTokenizer(AutoTokenizer):
         """Batch encode texts without special tokens."""
         encoded = self.tokenizer(texts, add_special_tokens=False)
         return encoded["input_ids"]
+
+    def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        """Encode text and return character offsets for each token."""
+        encoded = self.tokenizer(text, add_special_tokens=False, return_offsets_mapping=True)
+        return list(encoded["input_ids"]), [tuple(offset) for offset in encoded["offset_mapping"]]
 
     def decode_batch(self, token_sequences: Sequence[Sequence[int]]) -> Sequence[str]:
         """Batch decode using batch_decode method."""
@@ -644,6 +673,11 @@ class TokenizersAutoTokenizer(AutoTokenizer):
             for encoding in self.tokenizer.encode_batch(texts, add_special_tokens=False)
         ]
 
+    def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        """Encode text and return character offsets for each token."""
+        encoding = self.tokenizer.encode(text, add_special_tokens=False)
+        return list(encoding.ids), list(encoding.offsets)
+
 
 class TokieAutoTokenizer(AutoTokenizer):
     """Adapter for tokie tokenizers."""
@@ -656,6 +690,11 @@ class TokieAutoTokenizer(AutoTokenizer):
     def encode(self, text: str) -> list[int]:
         """Encode text and extract token IDs."""
         return self.tokenizer.encode(text, add_special_tokens=False).ids
+
+    def encode_with_offsets(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        """Encode text and return character offsets for each token."""
+        encoding = self.tokenizer.encode_with_offsets(text, add_special_tokens=False)
+        return list(encoding.ids), _byte_offsets_to_character_offsets(text, encoding.offsets)
 
     def decode(self, tokens: Sequence[int]) -> str:
         """Decode token IDs back to text."""
