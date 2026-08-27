@@ -419,3 +419,36 @@ def test_token_chunker_return_type(tiktokenizer: Encoding, sample_text: str) -> 
     chunks = chunker.chunk(sample_text)
     assert all([type(chunk) is Chunk for chunk in chunks])
     assert all([len(tiktokenizer.encode(chunk.text)) <= 512 for chunk in chunks])
+
+
+def test_token_chunker_float_overlap_out_of_range() -> None:
+    """A float chunk_overlap that resolves to >= chunk_size must be rejected.
+
+    A float is treated as a fraction of chunk_size, so chunk_overlap=1.0 with
+    chunk_size=100 resolves to an overlap of 100. That used to construct fine
+    and then either crash chunk() with "range() arg 3 must not be zero" (step
+    of zero) or silently drop the text (negative step). It should raise the
+    same ValueError the int path already raises.
+    """
+    with pytest.raises(ValueError):
+        TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=1.0)
+    with pytest.raises(ValueError):
+        TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=1.5)
+
+
+def test_token_chunker_negative_overlap() -> None:
+    """A negative chunk_overlap must be rejected instead of skipping tokens."""
+    with pytest.raises(ValueError):
+        TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=-0.5)
+    # A small negative fraction resolves to int() == 0, so it must be rejected
+    # on the input sign rather than the resolved token count.
+    with pytest.raises(ValueError):
+        TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=-0.001)
+
+
+def test_token_chunker_float_overlap_valid() -> None:
+    """A valid fractional overlap still resolves to a token count and chunks."""
+    chunker = TokenChunker(tokenizer="character", chunk_size=100, chunk_overlap=0.2)
+    assert chunker.chunk_overlap == 20
+    chunks = chunker.chunk("hello world " * 50)
+    assert len(chunks) > 0

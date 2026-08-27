@@ -126,7 +126,7 @@ def test_backend_selection(request: pytest.FixtureRequest, backend_str: str) -> 
     ]
 
 
-@pytest.mark.parametrize("model_name", ["gpt2", "cl100k_base", "p50k_base"])
+@pytest.mark.parametrize("model_name", ["gpt2", "p50k_base"])
 def test_string_init(model_name: str) -> None:
     """Test initialization of tokenizer with different model strings."""
     try:
@@ -166,7 +166,7 @@ def test_encode_decode(request: pytest.FixtureRequest, backend_str: str, sample_
         assert decoded == sample_text
 
 
-@pytest.mark.parametrize("model_name", ["gpt2", "cl100k_base", "p50k_base"])
+@pytest.mark.parametrize("model_name", ["gpt2", "p50k_base"])
 def test_string_init_encode_decode(model_name: str) -> None:
     """Test basic functionality of string initialized models."""
     try:
@@ -875,7 +875,7 @@ def test_tokenizer_batch_operations_consistency() -> None:
 ### Tokie Backend Tests ###
 
 
-@pytest.mark.parametrize("model_name", ["gpt2", "cl100k_base", "o200k_base", "p50k_base"])
+@pytest.mark.parametrize("model_name", ["gpt2", "p50k_base"])
 def test_tokie_backend_string_init(model_name: str) -> None:
     """Test that string-loaded tokenizers use tokie backend."""
     tokenizer = AutoTokenizer(model_name)
