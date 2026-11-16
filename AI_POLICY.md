@@ -17,6 +17,8 @@ This applies to maintainers too: if an agent wrote the code, a maintainer review
 
 If AI wrote a significant part of a pull request, the description must include the prompts you used, in a collapsed `<details>` block under an **AI prompts** heading. "Significant" means more than autocomplete or a few lines: an agent session, a generated function, a generated test suite. Paste the prompts as you wrote them, not a summary. Leave out secrets and private data.
 
+For commits pushed without a pull request (the core team on `v2` while it is being built), put the prompts in the commit body under `AI prompts:` instead.
+
 Small assists (autocomplete, a renamed variable, a one-line suggestion) need no disclosure.
 
 ## Quoting AI

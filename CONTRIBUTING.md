@@ -2,7 +2,7 @@
 
 > "I like them big, I like them CONTRIBUTING" ~ Moto Moto, probably
 
-**PRs are frozen.** We're building Chonkie v2. v1.7 is the last 1.x release; fixes go into 2.0. Until v2 is stable, only the core team opens pull requests, and they target the `v2` branch. New pull requests on `main` are closed automatically.
+**PRs are frozen.** We're building Chonkie v2. v1.7 is the last 1.x release; fixes go into 2.0. Until v2 is stable, the core team pushes directly to the `v2` branch, and new pull requests are closed automatically.
 
 Read the [RFC](https://github.com/feyninc/chonkie/issues/656) first, and the [AI policy](AI_POLICY.md) before you open anything.
 
@@ -91,9 +91,14 @@ bug(core): keep whitespace in recursive overlap
 
 Pull request titles follow the same format.
 
+## Pushing to `v2`
+
+While v2 is being built, the core team pushes straight to `v2`. Keep each commit to one change, run fmt, clippy, and the tests first, and never force-push. If AI wrote a significant part of a commit, put the prompts in the commit body under `AI prompts:`.
+
 ## Pull requests
 
-- Target `v2`.
+Once v2 is stable and the freeze lifts, changes come in as pull requests against `main`.
+
 - One change per pull request. Keep it small enough to read in one sitting.
 - A bug fix comes with a test that fails without it.
 - Open it yourself and explain what changed and why in your own words. AI must not open pull requests or write comments.

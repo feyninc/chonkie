@@ -65,4 +65,4 @@ feat(core): add the recursive chunker on top of chunk
 bug(core): keep whitespace in recursive overlap
 ```
 
-Commit only when the user asks. Never open pull requests or issues, and never post comments on GitHub: a human does that. When you prepare a branch for a PR, give the human a description that says what changed and why, plus the prompts used in the session under an **AI prompts** heading, as the AI policy requires. PRs target `v2`.
+Commit only when the user asks. Never open pull requests or issues, and never post comments on GitHub: a human does that. While v2 is being built, commits go straight to `v2` (no PRs; the freeze workflow closes them). Never force-push. Put the session's prompts in the commit body under `AI prompts:` when AI wrote a significant part, as the AI policy requires.
