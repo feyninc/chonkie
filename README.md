@@ -77,7 +77,3 @@ If you use Chonkie in your research, please cite it as follows:
   howpublished = {\url{https://github.com/feyninc/chonkie}},
 }
 ```
-
-## License
-
-MIT. See [LICENSE](LICENSE).
