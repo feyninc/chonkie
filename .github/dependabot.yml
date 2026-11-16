@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    target-branch: "v2"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "feat(core)"
+    groups:
+      cargo:
+        patterns: ["*"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "v2"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "feat(ci)"
+    groups:
+      actions:
+        patterns: ["*"]

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [v2]
+  pull_request:
+    branches: [v2, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: fmt, clippy, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Skip the Rust steps until the Cargo workspace lands (FEYN-269).
+      - id: workspace
+        run: echo "exists=$([ -f Cargo.toml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - if: steps.workspace.outputs.exists == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - if: steps.workspace.outputs.exists == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - if: steps.workspace.outputs.exists == 'true'
+        run: cargo fmt --all --check
+
+      - if: steps.workspace.outputs.exists == 'true'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - if: steps.workspace.outputs.exists == 'true'
+        run: cargo test --workspace
+
+  secrets:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Chonkie v2 RFC
+    url: https://github.com/feyninc/chonkie/issues/656
+    about: What v2 is, and what's in and out of scope.
+  - name: Documentation
+    url: https://docs.chonkie.ai
+    about: Please consult the documentation before creating an issue.
+  - name: Community
+    url: https://discord.gg/vH3SkRqmUz
+    about: Join our Discord community to ask questions and collaborate.

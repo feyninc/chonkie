@@ -1,68 +1,52 @@
-# Byte-compiled / optimized / DLL files
-__pycache__
+# Rust
+target/
+**/*.rs.bk
+*.pdb
+
+# Python bindings
+__pycache__/
 *.py[cod]
-*$py.class
-
-# Compiled files and C files
 *.so
-*.c
-
-# Distribution / packaging
-build/*
-dist/
+*.pyd
 *.egg-info/
-*/chonkie.egg-info/*
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-coverage.xml
-*.cover
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.ropeproject/
-.ipynb_checkpoints/
-.vscode/
-
-# Environments
-.env
-.venv
-env/
+.venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
+dist/
+wheels/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
-# IDE specific files
-.vscode/*
+# JS/TS bindings
+node_modules/
+pkg/
+*.node
+*.tgz
+
+# Coverage and profiling
+*.profraw
+*.profdata
+lcov.info
+coverage/
+htmlcov/
+.coverage*
+
+# Environments and secrets
+.env
+.env.*
+
+# IDE
+.vscode/
 .idea/
 *.swp
 *.swo
 
-# OS specific files
+# OS
 .DS_Store
 Thumbs.db
 
-# Project specific
-/tmp/*
-/tests/data/*
-notebooks/*
+# Local notes
 CLAUDE.md
 *_PLAN.md
-.temp/*
-chroma/*
-.chaider/*
-.chaiderignore
-test-env/*
-
-# SQLite database files
-data/
-*.db
-*.db-shm
-*.db-wal
-.vercel
-.env*
+notes/
+/tmp/
