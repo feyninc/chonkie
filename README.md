@@ -23,7 +23,7 @@ _The tiny, fast and correct chunking library that just works_
 Tired of making your gazillionth chunker? Sick of the overhead of large libraries? Want to chunk your texts quickly and efficiently? Chonkie the mighty hippo is here to help! And this time, she's been on a diet. 🥗
 
 **🦀 Rust core**: One small, readable core. Every binding CHONKs the same way </br>
-**🪶 Light-weight**: Under 1MB total. No bloat, just CHONK </br>
+**🪶 Light-weight**: Under 1MB of code. No bloat, just CHONK </br>
 **⚡ Fast**: CHONK at the speed of light! zooooom </br>
 **✅ Correct**: Chunks that add back up to your text, every single time </br>
 **✨ Easy to use**: Install, Import, CHONK </br>

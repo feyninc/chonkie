@@ -1,0 +1,19 @@
+[package]
+name = "chonkie"
+description = "Small, fast, correct text chunking"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords = ["chunking", "text", "rag", "tokenizer", "nlp"]
+categories = ["text-processing"]
+
+[dependencies]
+chunk = "0.10"
+tokie = { version = "0.2", default-features = false }
+
+[features]
+default = ["hub"]
+# Download tokenizers from the Hugging Face Hub on first use, and cache them.
+hub = ["tokie/hub"]

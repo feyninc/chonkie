@@ -23,26 +23,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Skip the Rust steps until the Cargo workspace lands (FEYN-269).
-      - id: workspace
-        run: echo "exists=$([ -f Cargo.toml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-      - if: steps.workspace.outputs.exists == 'true'
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - if: steps.workspace.outputs.exists == 'true'
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
-      - if: steps.workspace.outputs.exists == 'true'
-        run: cargo fmt --all --check
+      - run: cargo fmt --all --check
 
-      - if: steps.workspace.outputs.exists == 'true'
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - if: steps.workspace.outputs.exists == 'true'
-        run: cargo test --workspace
+      - run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
+
+      - run: cargo test --workspace
+
+      - name: test against real tokenizers
+        run: |
+          mkdir -p "$RUNNER_TEMP/tokenizers" && cd "$RUNNER_TEMP/tokenizers"
+          curl -sfL -o gpt2.json https://huggingface.co/openai-community/gpt2/resolve/main/tokenizer.json
+          curl -sfL -o bert.json https://huggingface.co/google-bert/bert-base-uncased/resolve/main/tokenizer.json
+          curl -sfL -o cl100k.json https://huggingface.co/Xenova/gpt-4/resolve/main/tokenizer.json
+          cd "$GITHUB_WORKSPACE"
+          CHONKIE_TEST_TOKENIZERS="$RUNNER_TEMP/tokenizers" cargo test --workspace --release -- --include-ignored
 
   secrets:
     name: secret scan
