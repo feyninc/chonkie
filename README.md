@@ -58,6 +58,8 @@ Four chunkers. That's it. That's the list. 🦛
 | `recursive` | Splits text hierarchically with customizable rules.                |
 | `code`      | Splits code into structurally meaningful chunks.                   |
 
+Curious how they CHONK so fast? 🏎️ [How the recursive chunker works](docs/recursive.md) walks through the algorithm, the speed tricks and the tests behind every guarantee.
+
 ## ✅ Guarantees
 
 Every chunker holds these, and the test suite checks them. No ifs, no buts, no lost CHONKs:
