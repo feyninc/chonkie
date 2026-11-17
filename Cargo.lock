@@ -540,9 +540,9 @@ dependencies = [
 
 [[package]]
 name = "pretokie"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15dd42ad0afea9df34f9de54e8ce17b07eacede902b2a7cffcaf39d0bde6811"
+checksum = "7a7d62147fcf3282f4f92e1fdc7ace2c84a22c970c0e590fb597407bf39c1110"
 dependencies = [
  "unicode-general-category",
 ]
@@ -843,9 +843,9 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 
 [[package]]
 name = "tokie"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a44e42c472d83470121f246a8e7731906af27ee3c064df6dcd5078cc3b143068"
+checksum = "c54c5e4fe71732c60d2dffaac917f3c41fb5a07b1f650153c56565f1c64461be"
 dependencies = [
  "aho-corasick",
  "daggrs",

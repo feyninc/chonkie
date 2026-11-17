@@ -10,7 +10,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AI_POLICY.md](AI_POLICY.md). Both a
 
 Four chunkers: token, sentence, recursive, code. Nothing else. Do not add integrations, handshakes, chefs, embeddings, pipelines, cloud clients, or another chunker. Do not port v1 modules beyond those four.
 
-The core stays small: 1-2k lines of Rust, under 1MB of its own code in the binary (dependencies such as tokie and std are not counted). Ask before adding a dependency. `tokie` is the tokenizer; the default is gpt2 (`tokiers/gpt2`), downloaded from the Hugging Face Hub on first use and cached. Nothing tokenizer-sized is embedded in the binary. `chunk` is the foundation for the chunkers and stays an independent crate; don't vendor it.
+The core stays small: 1-2k lines of Rust, under 1MB of its own code in the binary (dependencies such as tokie and std are not counted). Ask before adding a dependency. `tokie` is the tokenizer; the default is gpt2 (`tokiers/gpt2`), downloaded from the Hugging Face Hub on first use and cached. Nothing tokenizer-sized is embedded by default; the opt-in `gpt2` feature builds the gpt2 `.tokie` file (3.9MB of data) into the binary for offline and browser use. `chunk` is the foundation for the chunkers and stays an independent crate; don't vendor it.
 
 ## Crates
 

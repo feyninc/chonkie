@@ -118,6 +118,8 @@ pub fn corpus() -> Vec<String> {
 pub fn tokenizers() -> Vec<(String, Box<dyn Fn() -> Tokenizer>)> {
     let mut all: Vec<(String, Box<dyn Fn() -> Tokenizer>)> =
         vec![("characters".into(), Box::new(Tokenizer::characters))];
+    #[cfg(feature = "gpt2")]
+    all.push(("gpt2 (built in)".into(), Box::new(Tokenizer::gpt2)));
     if let Ok(dir) = std::env::var("CHONKIE_TEST_TOKENIZERS") {
         let mut paths: Vec<_> = std::fs::read_dir(dir)
             .unwrap()

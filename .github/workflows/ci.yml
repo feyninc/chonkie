@@ -36,6 +36,7 @@ jobs:
       - run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
 
       - run: cargo test --workspace
+      - run: cargo test -p chonkie --no-default-features --features gpt2
 
       - name: test against real tokenizers
         run: |

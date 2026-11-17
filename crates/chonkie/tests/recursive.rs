@@ -93,6 +93,7 @@ fn rejects_bad_config() {
 }
 
 #[test]
+#[cfg(not(feature = "gpt2"))]
 #[ignore = "downloads gpt2 from the Hugging Face Hub"]
 fn default_tokenizer_is_gpt2() {
     let chunks = RecursiveChunker::new(Tokenizer::default())
@@ -100,4 +101,12 @@ fn default_tokenizer_is_gpt2() {
         .chunk("Hello world, CHONK!")
         .unwrap();
     assert_eq!(chunks.iter().map(|c| c.token_count).sum::<usize>(), 7);
+}
+
+#[test]
+#[cfg(feature = "gpt2")]
+fn built_in_gpt2_is_the_default() {
+    let mut tok = Tokenizer::default();
+    assert_eq!(tok.count("Hello world, CHONK!").unwrap(), 7);
+    assert_eq!(Tokenizer::gpt2().count("").unwrap(), 0);
 }

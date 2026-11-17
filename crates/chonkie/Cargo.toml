@@ -11,9 +11,11 @@ categories = ["text-processing"]
 
 [dependencies]
 chunk = "0.10"
-tokie = { version = "0.2", default-features = false }
+tokie = { version = "0.2.1", default-features = false }
 
 [features]
 default = ["hub"]
 # Download tokenizers from the Hugging Face Hub on first use, and cache them.
 hub = ["tokie/hub"]
+# Build the gpt2 tokenizer (3.9MB) into the binary, for offline use and the browser.
+gpt2 = []
