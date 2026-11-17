@@ -2,8 +2,8 @@ use chunk::{IncludeDelim, split_at_patterns};
 
 use crate::{Chunk, Error, Result, Tokenizer};
 
-/// Typical bytes per pretoken in English text. Only affects speed.
-const BYTES_PER_PRETOKEN: usize = 4;
+/// Typical bytes per pretoken in English text, until `calibrate` measures it.
+const BYTES_PER_PRETOKEN: f64 = 4.0;
 
 /// Which side of a split a delimiter stays on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -56,6 +56,7 @@ pub struct RecursiveChunker {
     tokenizer: Tokenizer,
     chunk_size: usize,
     levels: Vec<Level>,
+    bytes_per_pretoken: f64,
 }
 
 impl Default for RecursiveChunker {
@@ -70,12 +71,24 @@ impl RecursiveChunker {
             tokenizer: tokenizer.into(),
             chunk_size: 2048,
             levels: Level::defaults(),
+            bytes_per_pretoken: BYTES_PER_PRETOKEN,
         }
     }
 
     pub fn chunk_size(mut self, chunk_size: usize) -> Self {
         self.chunk_size = chunk_size;
         self
+    }
+
+    /// Measure bytes per pretoken on `sample`, text like what will be chunked.
+    /// Pieces shorter than that many bytes per allowed token skip the pretoken
+    /// bound. This only changes speed: the chunks are the same either way.
+    pub fn calibrate(mut self, sample: &str) -> Result<Self> {
+        let pretokens = self.tokenizer.lower_bound(sample)?;
+        if pretokens > 0 {
+            self.bytes_per_pretoken = sample.len() as f64 / pretokens as f64;
+        }
+        Ok(self)
     }
 
     pub fn levels(mut self, levels: Vec<Level>) -> Self {
@@ -110,11 +123,13 @@ impl RecursiveChunker {
     }
 
     /// Whether `text` is sure to exceed `chunk_size`, judged without encoding.
-    /// Pieces under `BYTES_PER_PRETOKEN * chunk_size` bytes rarely pass the
+    /// Pieces under `bytes_per_pretoken * chunk_size` bytes rarely pass the
     /// bound, so they skip it and are counted directly.
     fn over(&mut self, text: &str) -> Result<bool> {
-        Ok(text.len() > BYTES_PER_PRETOKEN * self.chunk_size
-            && self.tokenizer.lower_bound(text)? > self.chunk_size)
+        Ok(
+            text.len() as f64 > self.bytes_per_pretoken * self.chunk_size as f64
+                && self.tokenizer.lower_bound(text)? > self.chunk_size,
+        )
     }
 
     fn split<'a>(

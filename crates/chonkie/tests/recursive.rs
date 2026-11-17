@@ -110,3 +110,21 @@ fn built_in_gpt2_is_the_default() {
     assert_eq!(tok.count("Hello world, CHONK!").unwrap(), 7);
     assert_eq!(Tokenizer::gpt2().count("").unwrap(), 0);
 }
+
+#[test]
+fn calibration_keeps_the_chunks() {
+    let text = common::corpus().concat();
+    for (_, make) in common::tokenizers() {
+        let plain = RecursiveChunker::new(make())
+            .chunk_size(64)
+            .chunk(&text)
+            .unwrap();
+        for sample in ["", "x", "The quick brown fox jumps over the lazy dog."] {
+            let mut calibrated = RecursiveChunker::new(make())
+                .chunk_size(64)
+                .calibrate(sample)
+                .unwrap();
+            assert_eq!(plain, calibrated.chunk(&text).unwrap());
+        }
+    }
+}
