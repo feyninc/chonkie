@@ -2,6 +2,9 @@ use chunk::{IncludeDelim, split_at_patterns};
 
 use crate::{Chunk, Error, Result, Tokenizer};
 
+/// Typical bytes per pretoken in English text. Only affects speed.
+const BYTES_PER_PRETOKEN: usize = 4;
+
 /// Which side of a split a delimiter stays on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Include {
@@ -97,10 +100,21 @@ impl RecursiveChunker {
         }
         let mut chunks = Vec::new();
         if !text.is_empty() {
-            let count = self.tokenizer.count(text)?;
+            let count = match self.over(text)? {
+                true => None,
+                false => Some(self.tokenizer.count(text)?),
+            };
             self.split(text, 0, text.len(), count, 0, &mut chunks)?;
         }
         Ok(chunks)
+    }
+
+    /// Whether `text` is sure to exceed `chunk_size`, judged without encoding.
+    /// Pieces under `BYTES_PER_PRETOKEN * chunk_size` bytes rarely pass the
+    /// bound, so they skip it and are counted directly.
+    fn over(&mut self, text: &str) -> Result<bool> {
+        Ok(text.len() > BYTES_PER_PRETOKEN * self.chunk_size
+            && self.tokenizer.lower_bound(text)? > self.chunk_size)
     }
 
     fn split<'a>(
@@ -108,11 +122,11 @@ impl RecursiveChunker {
         text: &'a str,
         start: usize,
         end: usize,
-        count: usize,
+        count: Option<usize>,
         level: usize,
         out: &mut Vec<Chunk<'a>>,
     ) -> Result<()> {
-        if count <= self.chunk_size {
+        if let Some(count) = count.filter(|&c| c <= self.chunk_size) {
             out.push(Chunk::new(text, start, end, count));
             return Ok(());
         }
@@ -123,18 +137,18 @@ impl RecursiveChunker {
         if pieces.len() < 2 {
             return self.split(text, start, end, count, level + 1, out);
         }
-        let slices: Vec<&str> = pieces.iter().map(|&(s, e)| &text[s..e]).collect();
-        let counts = self.tokenizer.count_batch(&slices)?;
+        let counts = self.counts(text, &pieces)?;
         let mut i = 0;
         while i < pieces.len() {
             if counts[i] > self.chunk_size {
-                self.split(text, pieces[i].0, pieces[i].1, counts[i], level + 1, out)?;
+                let count = Some(counts[i]).filter(|&c| c != usize::MAX);
+                self.split(text, pieces[i].0, pieces[i].1, count, level + 1, out)?;
                 i += 1;
                 continue;
             }
             let mut j = i + 1;
             let mut sum = counts[i];
-            while j < pieces.len() && sum + counts[j] <= self.chunk_size {
+            while j < pieces.len() && sum.saturating_add(counts[j]) <= self.chunk_size {
                 sum += counts[j];
                 j += 1;
             }
@@ -155,6 +169,26 @@ impl RecursiveChunker {
             i = j;
         }
         Ok(())
+    }
+
+    /// Token counts of `pieces`, with `usize::MAX` for pieces the lower bound
+    /// already puts over `chunk_size`.
+    fn counts(&mut self, text: &str, pieces: &[(usize, usize)]) -> Result<Vec<usize>> {
+        let mut counts = vec![usize::MAX; pieces.len()];
+        let mut todo = Vec::with_capacity(pieces.len());
+        for (i, &(s, e)) in pieces.iter().enumerate() {
+            if !self.over(&text[s..e])? {
+                todo.push(i);
+            }
+        }
+        let slices: Vec<&str> = todo
+            .iter()
+            .map(|&i| &text[pieces[i].0..pieces[i].1])
+            .collect();
+        for (i, n) in todo.into_iter().zip(self.tokenizer.count_batch(&slices)?) {
+            counts[i] = n;
+        }
+        Ok(counts)
     }
 
     /// Greedy cut at character boundaries: the longest prefix that fits, found

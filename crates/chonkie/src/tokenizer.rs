@@ -59,6 +59,15 @@ impl Tokenizer {
         })
     }
 
+    /// A lower bound on `count(text)` that is cheaper to compute: the number of
+    /// pretokens, since no token spans two pretokens. Exact for characters.
+    pub fn lower_bound(&mut self, text: &str) -> Result<usize> {
+        Ok(match self.load()? {
+            Some(tok) => tok.count_pretokens(text),
+            None => text.chars().count(),
+        })
+    }
+
     /// Tokens in each of `texts`.
     pub fn count_batch(&mut self, texts: &[&str]) -> Result<Vec<usize>> {
         Ok(match self.load()? {
