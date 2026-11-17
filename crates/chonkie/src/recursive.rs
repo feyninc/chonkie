@@ -1,4 +1,4 @@
-use chunk::{IncludeDelim, split_at_patterns};
+use chunk::{IncludeDelim, PatternSplitter};
 
 use crate::{Chunk, Error, Result, Tokenizer};
 
@@ -56,6 +56,7 @@ pub struct RecursiveChunker {
     tokenizer: Tokenizer,
     chunk_size: usize,
     levels: Vec<Level>,
+    delims: Vec<PatternSplitter>,
     bytes_per_pretoken: f64,
 }
 
@@ -70,9 +71,11 @@ impl RecursiveChunker {
         Self {
             tokenizer: tokenizer.into(),
             chunk_size: 2048,
-            levels: Level::defaults(),
+            levels: Vec::new(),
+            delims: Vec::new(),
             bytes_per_pretoken: BYTES_PER_PRETOKEN,
         }
+        .levels(Level::defaults())
     }
 
     pub fn chunk_size(mut self, chunk_size: usize) -> Self {
@@ -92,6 +95,13 @@ impl RecursiveChunker {
     }
 
     pub fn levels(mut self, levels: Vec<Level>) -> Self {
+        self.delims = levels
+            .iter()
+            .map(|l| {
+                let patterns: Vec<&[u8]> = l.delimiters.iter().map(String::as_bytes).collect();
+                PatternSplitter::new(&patterns)
+            })
+            .collect();
         self.levels = levels;
         self
     }
@@ -145,10 +155,10 @@ impl RecursiveChunker {
             out.push(Chunk::new(text, start, end, count));
             return Ok(());
         }
-        let Some(rule) = self.levels.get(level) else {
+        let (Some(rule), Some(delims)) = (self.levels.get(level), self.delims.get(level)) else {
             return self.cut(text, start, end, out);
         };
-        let pieces = pieces(&text[start..end], rule, start);
+        let pieces = pieces(&text[start..end], delims, rule.include, start);
         if pieces.len() < 2 {
             return self.split(text, start, end, count, level + 1, out);
         }
@@ -251,14 +261,20 @@ impl RecursiveChunker {
     }
 }
 
-/// Byte ranges, offset by `base`, that cover `text` with no gaps.
-fn pieces(text: &str, rule: &Level, base: usize) -> Vec<(usize, usize)> {
-    let patterns: Vec<&[u8]> = rule.delimiters.iter().map(|d| d.as_bytes()).collect();
-    let include = match rule.include {
+/// Byte ranges, offset by `base`, that cover `text` with no gaps: one per
+/// delimiter match, with the delimiter on the side `include` says.
+fn pieces(
+    text: &str,
+    delims: &PatternSplitter,
+    include: Include,
+    base: usize,
+) -> Vec<(usize, usize)> {
+    let include = match include {
         Include::Prev => IncludeDelim::Prev,
         Include::Next => IncludeDelim::Next,
     };
-    split_at_patterns(text.as_bytes(), &patterns, include, 0)
+    delims
+        .split(text.as_bytes(), include, 0)
         .into_iter()
         .filter(|&(s, e)| s < e)
         .map(|(s, e)| (base + s, base + e))

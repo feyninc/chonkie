@@ -87,9 +87,14 @@ impl Tokenizer {
         Ok(self.tokie())
     }
 
+    /// Chunkers count many short pieces, where tokie's worker threads cost
+    /// more than they save, so counting stays on the calling thread.
     fn tokie(&mut self) -> Option<&mut tokie::Tokenizer> {
         match &mut self.0 {
-            Kind::Tokie(tok) => Some(tok),
+            Kind::Tokie(tok) => {
+                tok.threads(1);
+                Some(tok)
+            }
             _ => None,
         }
     }
