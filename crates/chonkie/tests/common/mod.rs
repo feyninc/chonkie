@@ -1,41 +1,159 @@
-//! The five correctness rules every chunker must hold, and the texts to check them on.
+//! The five correctness rules every chunker must hold, and the texts and
+//! tokenizers to check them on. Each rule is its own function so a chunker's
+//! tests can name the rule that broke; each returns the first violation as a
+//! message that says which chunk broke it and how.
 #![allow(dead_code)]
 
 use chonkie::{Chunk, Tokenizer};
 
-/// Checks rules 1, 2, 3 and 5 for chunks made with overlap 0.
-/// Rule 5 follows from 1 and 2: the chunks are slices that rebuild the source.
-pub fn check(source: &str, chunks: &[Chunk], tokenizer: &mut Tokenizer, chunk_size: usize) {
-    let rebuilt: String = chunks.iter().map(|c| c.text).collect();
-    assert_eq!(rebuilt, source, "rule 1: chunks must rebuild the source");
+pub type Verdict = Result<(), String>;
 
-    let mut at = 0;
-    for chunk in chunks {
-        assert!(!chunk.text.is_empty(), "no empty chunks");
-        assert_eq!(chunk.start, at, "rule 2: indices must be contiguous");
-        assert_eq!(
-            &source[chunk.start..chunk.end],
-            chunk.text,
-            "rule 2: text[start..end] == text"
-        );
-        at = chunk.end;
-
-        let count = tokenizer.count(chunk.text).unwrap();
-        assert_eq!(
-            chunk.token_count, count,
-            "rule 3: token_count must match the tokenizer"
-        );
-        let one_char = chunk.text.chars().count() == 1;
-        assert!(
-            chunk.token_count <= chunk_size || one_char,
-            "rule 3: {count} tokens > {chunk_size}"
-        );
+fn show(text: &str) -> String {
+    const MAX: usize = 60;
+    match text.char_indices().nth(MAX) {
+        Some((at, _)) => format!("{:?}… ({} bytes)", &text[..at], text.len()),
+        None => format!("{text:?}"),
     }
-    assert_eq!(
-        at,
-        source.len(),
-        "rule 2: chunks must end at the source end"
-    );
+}
+
+/// Rule 1: with overlap 0, the chunk texts concatenate to the source.
+pub fn rebuilds_source(source: &str, chunks: &[Chunk]) -> Verdict {
+    let mut at = 0;
+    for (i, chunk) in chunks.iter().enumerate() {
+        let rest = &source[at..];
+        if chunk.text.is_empty() {
+            return Err(format!("chunk {i} is empty"));
+        }
+        if !rest.starts_with(chunk.text) {
+            return Err(format!(
+                "chunk {i} is {} but the source continues with {}",
+                show(chunk.text),
+                show(rest)
+            ));
+        }
+        at += chunk.text.len();
+    }
+    match at == source.len() {
+        true => Ok(()),
+        false => Err(format!(
+            "the chunks stop at byte {at}, the source has {}",
+            source.len()
+        )),
+    }
+}
+
+/// Rule 2: `source[start..end] == text` for every chunk, and each chunk starts
+/// where the one before it ended, from 0 to the end of the source.
+pub fn offsets_slice_source(source: &str, chunks: &[Chunk]) -> Verdict {
+    let mut at = 0;
+    for (i, chunk) in chunks.iter().enumerate() {
+        if chunk.start != at {
+            return Err(format!(
+                "chunk {i} starts at {}, expected {at}",
+                chunk.start
+            ));
+        }
+        if chunk.end < chunk.start || chunk.end > source.len() {
+            return Err(format!(
+                "chunk {i} has bad range {}..{}",
+                chunk.start, chunk.end
+            ));
+        }
+        if source.get(chunk.start..chunk.end) != Some(chunk.text) {
+            return Err(format!(
+                "chunk {i}: source[{}..{}] is not its text {}",
+                chunk.start,
+                chunk.end,
+                show(chunk.text)
+            ));
+        }
+        at = chunk.end;
+    }
+    match at == source.len() {
+        true => Ok(()),
+        false => Err(format!(
+            "the last chunk ends at {at}, the source at {}",
+            source.len()
+        )),
+    }
+}
+
+/// Rule 3: `token_count` is what the tokenizer counts for the chunk's text,
+/// and is at most `chunk_size` unless the chunk is a single character, which
+/// cannot be split further.
+pub fn token_counts_exact(
+    chunks: &[Chunk],
+    tokenizer: &mut Tokenizer,
+    chunk_size: usize,
+) -> Verdict {
+    for (i, chunk) in chunks.iter().enumerate() {
+        let count = tokenizer.count(chunk.text).map_err(|e| e.to_string())?;
+        if chunk.token_count != count {
+            return Err(format!(
+                "chunk {i} {} says {} tokens, the tokenizer counts {count}",
+                show(chunk.text),
+                chunk.token_count
+            ));
+        }
+        if count > chunk_size && chunk.text.chars().count() > 1 {
+            return Err(format!(
+                "chunk {i} {} has {count} tokens, over chunk_size {chunk_size}",
+                show(chunk.text)
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Rule 4: chunking the same input again gives the same chunks.
+pub fn same_chunks(first: &[Chunk], again: &[Chunk]) -> Verdict {
+    if first.len() != again.len() {
+        return Err(format!(
+            "{} chunks the first time, {} the second",
+            first.len(),
+            again.len()
+        ));
+    }
+    match first.iter().zip(again).position(|(a, b)| a != b) {
+        None => Ok(()),
+        Some(i) => Err(format!(
+            "chunk {i} changed: {:?} then {:?}",
+            first[i], again[i]
+        )),
+    }
+}
+
+/// Rule 5: no codepoint is split and nothing is dropped. Every chunk boundary
+/// falls on a char boundary, and each character of the source, spaces and
+/// delimiters included, appears in the chunks as often as in the source.
+/// Checked on its own, without leaning on rules 1 and 2.
+pub fn keeps_every_char(source: &str, chunks: &[Chunk]) -> Verdict {
+    for (i, chunk) in chunks.iter().enumerate() {
+        for at in [chunk.start, chunk.end] {
+            if !source.is_char_boundary(at) {
+                return Err(format!(
+                    "chunk {i} has an edge at byte {at}, inside a codepoint"
+                ));
+            }
+        }
+    }
+    let mut seen = std::collections::BTreeMap::<char, isize>::new();
+    for c in source.chars() {
+        *seen.entry(c).or_default() += 1;
+    }
+    for c in chunks.iter().flat_map(|c| c.text.chars()) {
+        *seen.entry(c).or_default() -= 1;
+    }
+    match seen.into_iter().find(|&(_, n)| n != 0) {
+        None => Ok(()),
+        Some((c, n)) if n > 0 => Err(format!(
+            "{c:?} is in the source {n} more time(s) than in the chunks"
+        )),
+        Some((c, n)) => Err(format!(
+            "{c:?} is in the chunks {} more time(s) than in the source",
+            -n
+        )),
+    }
 }
 
 /// Edge cases plus seeded pseudo-random text.

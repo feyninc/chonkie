@@ -11,3 +11,7 @@ repository = "https://github.com/feyninc/chonkie"
 [profile.release]
 lto = true
 codegen-units = 1
+
+# The tests count tokens over and over; an unoptimized tokenizer makes them slow.
+[profile.dev.package."*"]
+opt-level = 3
