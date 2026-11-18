@@ -70,18 +70,8 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 name = "chonkie"
 version = "2.0.0-alpha.0"
 dependencies = [
- "chunk",
- "tokie",
-]
-
-[[package]]
-name = "chunk"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45b9676eb73ad3ebff08c750261a0d6a423f225883f30164600db57ba885e834"
-dependencies = [
- "daggrs",
  "memchr",
+ "tokie",
 ]
 
 [[package]]

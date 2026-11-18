@@ -35,7 +35,7 @@ Tired of making your gazillionth chunker? Sick of the overhead of large librarie
 
 Chonkie started as a tiny chunking library and, well, got a little too CHONKY. 🍔 v2 goes back to what Chonkie does best: chunking.
 
-- **🦀 A Rust core** of about 1–2k lines, built on [chunk](https://github.com/feyninc/chunk).
+- **🦀 A Rust core** of about 1–2k lines, with SIMD delimiter search.
 - **🔤 [tokie](https://github.com/feyninc/tokie)** as the default tokenizer. It loads any Hugging Face `tokenizer.json`.
 - **🐍 Python and 🟨 JS/TS bindings** over the same core, so every language gets the same chunks.
 - **💻 A CLI, 🌐 an HTTP server and 🐳 a small Docker image** for when you don't want to write code at all.

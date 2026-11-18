@@ -10,7 +10,7 @@ Read the [RFC](https://github.com/feyninc/chonkie/issues/656) first, and the [AI
 
 Chonkie is a chunking library. The core is Rust. Python and JS/TS are bindings: they don't implement chunkers.
 
-We keep four chunkers: token, sentence, recursive, code. [tokie](https://github.com/feyninc/tokie) is the default tokenizer. [chunk](https://github.com/feyninc/chunk) is the foundation for the chunkers and stays its own crate.
+We keep four chunkers: token, sentence, recursive, code. [tokie](https://github.com/feyninc/tokie) is the default tokenizer. Delimiter search is chonkie's own, built on `memchr`.
 
 Don't add integrations, handshakes, chefs, embeddings, pipelines, or another chunker. Plumbing is easy to write in the app now. What's hard is getting the primitives right.
 

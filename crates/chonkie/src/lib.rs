@@ -3,6 +3,7 @@
 //! Every chunk borrows its text from the input. `start` and `end` are byte
 //! offsets, so `&text[chunk.start..chunk.end] == chunk.text`.
 
+mod delim;
 mod error;
 mod recursive;
 mod tokenizer;

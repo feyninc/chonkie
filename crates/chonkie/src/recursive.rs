@@ -1,5 +1,4 @@
-use chunk::{IncludeDelim, PatternSplitter};
-
+use crate::delim::Delimiters;
 use crate::{Chunk, Error, Result, Tokenizer};
 
 /// Typical bytes per pretoken in English text, until `calibrate` measures it.
@@ -56,7 +55,7 @@ pub struct RecursiveChunker {
     tokenizer: Tokenizer,
     chunk_size: usize,
     levels: Vec<Level>,
-    delims: Vec<PatternSplitter>,
+    delims: Vec<Delimiters>,
     bytes_per_pretoken: f64,
 }
 
@@ -97,10 +96,7 @@ impl RecursiveChunker {
     pub fn levels(mut self, levels: Vec<Level>) -> Self {
         self.delims = levels
             .iter()
-            .map(|l| {
-                let patterns: Vec<&[u8]> = l.delimiters.iter().map(String::as_bytes).collect();
-                PatternSplitter::new(&patterns)
-            })
+            .map(|l| Delimiters::new(l.delimiters.iter().map(String::as_bytes)))
             .collect();
         self.levels = levels;
         self
@@ -263,20 +259,23 @@ impl RecursiveChunker {
 
 /// Byte ranges, offset by `base`, that cover `text` with no gaps: one per
 /// delimiter match, with the delimiter on the side `include` says.
-fn pieces(
-    text: &str,
-    delims: &PatternSplitter,
-    include: Include,
-    base: usize,
-) -> Vec<(usize, usize)> {
-    let include = match include {
-        Include::Prev => IncludeDelim::Prev,
-        Include::Next => IncludeDelim::Next,
-    };
-    delims
-        .split(text.as_bytes(), include, 0)
-        .into_iter()
-        .filter(|&(s, e)| s < e)
-        .map(|(s, e)| (base + s, base + e))
-        .collect()
+fn pieces(text: &str, delims: &Delimiters, include: Include, base: usize) -> Vec<(usize, usize)> {
+    let bytes = text.as_bytes();
+    let mut out = Vec::new();
+    let (mut from, mut cut) = (0, 0);
+    while let Some((s, e)) = delims.find(bytes, from) {
+        let at = match include {
+            Include::Prev => e,
+            Include::Next => s,
+        };
+        if at > cut {
+            out.push((base + cut, base + at));
+            cut = at;
+        }
+        from = e;
+    }
+    if cut < text.len() {
+        out.push((base + cut, base + text.len()));
+    }
+    out
 }

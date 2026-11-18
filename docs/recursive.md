@@ -46,9 +46,13 @@ Even a cheap check costs something, so it only runs on pieces long enough to pla
 
 ### 🔍 Delimiters are compiled once
 
-Each level's delimiters are compiled into a [chunk](https://github.com/feyninc/chunk) `PatternSplitter` when the chunker is built: a double-array Aho-Corasick automaton that finds every delimiter in one pass, leftmost-first, so `\r\n` wins over `\r` and `\n\n` over `\n`. The recursion splits thousands of pieces per megabyte, and building the automaton for each one was about 8% of the runtime.
+Each level's delimiters are compiled once, when the chunker is built, and reused for every piece. The recursion splits thousands of pieces per megabyte, and rebuilding a matcher for each one used to be about 8% of the runtime.
 
-chunk's single-pattern paths go further with `memchr`: they search for delimiter bytes with SIMD (`memchr`, `memchr2`, `memchr3` for up to three bytes, a 256-entry lookup table beyond that) and only check whole patterns where a candidate byte is found. A prototype of that for `PatternSplitter` was another 13–16% faster end to end, which makes it the next thing to add to chunk.
+The search borrows the trick from the [chunk](https://github.com/feyninc/chunk) crate: delimiters are rare, so jump straight to bytes that could start one, and only compare whole patterns there. With at most three distinct first bytes the jump is SIMD `memchr`, `memchr2` or `memchr3`, which compare 32 bytes at a time on AVX2. With more, it's a 256-entry lookup table. The default levels use `memchr2` (`\n` `\r`), `memchr3` (`.` `!` `?`), the table (clauses) and `memchr` (space).
+
+Matches are leftmost-first: the earliest match wins, and among matches at the same byte the delimiter listed first wins, so put `\r\n` before `\r` and `\n\n` before `\n`. A unit test checks the search against a brute-force one on every first-byte path.
+
+Compared with chunk's Aho-Corasick `PatternSplitter`, this runs 19–28% fewer instructions per pass over warm text, and the chunks are byte-identical.
 
 ### 🧵 One thread per chunker
 

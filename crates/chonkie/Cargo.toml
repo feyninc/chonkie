@@ -10,7 +10,7 @@ keywords = ["chunking", "text", "rag", "tokenizer", "nlp"]
 categories = ["text-processing"]
 
 [dependencies]
-chunk = "0.10"
+memchr = "2"
 tokie = { version = "0.2.1", default-features = false }
 
 [features]
