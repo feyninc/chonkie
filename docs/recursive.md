@@ -90,3 +90,18 @@ A failure lists every case that broke, with the tokenizer, levels, chunk size, t
 | 5. 🧼 No mangling | `rule_5_no_dropped_chars_or_split_codepoints` | Every chunk edge is a char boundary, and every character, spaces and delimiters included, appears as often in the chunks as in the source. |
 
 The rules are checked separately on purpose: rule 5 doesn't lean on rules 1 and 2, so a bug that breaks one shows up as that rule. Smaller tests pin down behaviour the rules allow but don't fix: which side delimiters go on, text shorter than `chunk_size` staying whole, whitespace-only input, and multi-byte characters at `chunk_size=1`. `calibration_keeps_the_chunks` checks that `calibrate` never changes a chunk.
+
+## 🔀 Differences from 1.7
+
+Compared on 1MB of OpenWebText with the default levels, gpt2 counted by tiktoken in 1.7 and by tokie in v2:
+
+| `chunk_size` | Chunks, 1.7 / v2 | 1.7 chunks with a wrong `token_count` | 1.7 chunks over `chunk_size` | Shared cut points, character counter |
+| -----------: | ---------------: | ------------------------------------: | ---------------------------: | -----------------------------------: |
+| 128 | 2386 / 2413 | 1453 | 69 | 78% |
+| 512 | 489 / 494 | 482 | 64 | 96% |
+| 2048 | 113 / 116 | 113 | 51 | 99% |
+
+- **Counts are exact.** 1.7 gave a merged chunk the sum of its pieces' counts, and a token tokenizer counts a joined string differently from its parts. So most 1.7 counts were off, and up to 45% of its chunks were over `chunk_size`. v2 recounts every chunk it emits (rule 3), so its chunks come out a little smaller and a few more of them.
+- **No `min_characters_per_chunk`.** 1.7 glued pieces shorter than 24 characters, like a `"About the Author\n\n"` heading, onto their neighbour before merging. v2 merges by tokens only. With a character counter, where 1.7's sums are exact, this is most of the remaining difference.
+- **No token-level fallback.** 1.7 ended the recursion by encoding and decoding, which could change the text. v2 cuts at character boundaries, so chunks always slice the source.
+- **No overlap and no recipes.** `OverlapRefinery` and the recipe hub are gone, and with them the whitespace bug in recursive overlap ([#681](https://github.com/feyninc/chonkie/issues/681)).
